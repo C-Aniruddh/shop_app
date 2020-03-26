@@ -742,7 +742,8 @@ class _MyHomePageState extends State<MyHomePage> {
                         padding: const EdgeInsets.all(8.0),
                         child: new ListTile(
                           onTap: (){
-                            Navigator.push(context, MaterialPageRoute(builder: (context)=> ShopPage(shopDetails: document, userDetails: userData,)));
+                            //Navigator.push(context, MaterialPageRoute(builder: (context)=> ShopPage(shopDetails: document, userDetails: userData,)));
+                            _showModalAppointmentDetails(document);
                           },
                           leading: CircleAvatar(
                             backgroundColor: Colors.cyan,
@@ -750,10 +751,9 @@ class _MyHomePageState extends State<MyHomePage> {
                           ),
                           title: Text(document['shopper_name']),
                           subtitle: Text(document['appointment_status']),
-                          trailing: IconButton(icon: Icon(Icons.check), onPressed: (){
+                          trailing: IconButton(icon: Icon(Icons.info), onPressed: (){
                             print("Open");
-                            List<double> pt = gH.decode(document['shop_geohash']);
-                            MapUtils.openMap(pt[1],pt[0]);
+                            _showModalAppointmentDetails(document);
                           },),
                         ),
                       ),
