@@ -495,12 +495,13 @@ class _MyHomePageState extends State<MyHomePage> {
           return AlertDialog(
             content: SingleChildScrollView(
               child: Container(
-                child: Text("Mark this appointment as completed?"),
+                child: Column(children: <Widget>[
+                  PhoneAuthWidgets.subTitle("Enter OTP"),
+                  PhoneAuthWidgets.textField(otpController),
+                ],)
               ),
             ),
             actions: <Widget>[
-              PhoneAuthWidgets.subTitle("Enter OTP"),
-              PhoneAuthWidgets.textField(otpController),
               FlatButton(
                 onPressed: () {
                   if(otpController.text == otp){

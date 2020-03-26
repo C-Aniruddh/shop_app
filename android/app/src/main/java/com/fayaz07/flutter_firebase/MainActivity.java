@@ -1,4 +1,4 @@
-package com.fayaz07.flutter_firebase;
+package com.aniruddh.shop_app;
 
 import android.os.Bundle;
 import io.flutter.app.FlutterActivity;
