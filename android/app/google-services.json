@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "765431265467",
+    "firebase_url": "https://shopapp-15d39.firebaseio.com",
+    "project_id": "shopapp-15d39",
+    "storage_bucket": "shopapp-15d39.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:765431265467:android:17a3b1d609fda25ed5519e",
+        "android_client_info": {
+          "package_name": "com.aniruddh.shop_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "765431265467-k6nuoga2rr82gjukfqduagv9ho5mabe1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aniruddh.shop_app",
+            "certificate_hash": "e4fdbfdf693a7114f32f95b4d690dc3f5bb13052"
+          }
+        },
+        {
+          "client_id": "765431265467-la36fngiktebmieqd0751cqajh6tmn02.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBAHsukc4-UXM1-uMjOE3ji61uM-elVyXc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "765431265467-la36fngiktebmieqd0751cqajh6tmn02.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
