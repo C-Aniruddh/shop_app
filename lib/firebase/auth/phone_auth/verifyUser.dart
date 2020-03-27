@@ -1,13 +1,15 @@
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_firebase/firebase/auth/auth.dart';
-import 'package:flutter_firebase/firebase/auth/phone_auth/code.dart';
+// import 'package:flutter_firebase/firebase/auth/phone_auth/code.dart';
 import 'package:flutter_firebase/screens/homePage.dart';
 import 'package:flutter_firebase/utils/widgets.dart';
 import 'package:flutter_firebase/utils/constants.dart';
 import 'package:flutter_firebase/data_models/userModel.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../pin_test.dart';
 
@@ -39,6 +41,10 @@ class _PhoneAuthVerifyState extends State<PhoneAuthVerify> {
   FocusNode focusNode6 = FocusNode();
   String code = "";
 
+  String phoneNo;
+  String smsCode;
+  String verificationId;
+
   @override
   void initState() {
 ////    print(FirebasePhoneAuth.phoneAuthState.isClosed);
@@ -49,8 +55,9 @@ class _PhoneAuthVerifyState extends State<PhoneAuthVerify> {
 //      //if (FirebasePhoneAuth.phoneAuthState.isClosed)
 //
 //    });
-    FirebasePhoneAuth.phoneAuthState.stream
-        .listen((PhoneAuthState state) => print(state));
+    //FirebasePhoneAuth.phoneAuthState.stream
+     //   .listen((PhoneAuthState state) => print(state));
+    verifyPhone();
     super.initState();
   }
 
@@ -167,7 +174,7 @@ class _PhoneAuthVerifyState extends State<PhoneAuthVerify> {
 
           RaisedButton(
             elevation: 16.0,
-            onPressed: signIn,
+            onPressed: signInAction,
             child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Text(
@@ -183,16 +190,109 @@ class _PhoneAuthVerifyState extends State<PhoneAuthVerify> {
         ],
       );
 
-  signIn() async {
+  Future<void> verifyPhone() async {
+    final PhoneCodeAutoRetrievalTimeout autoRetrieve = (String verId) {
+      this.verificationId = verId;
+    };
+
+    final PhoneCodeSent smsCodeSent = (String verId, [int forceCodeResend]) {
+      this.verificationId = verId;
+    };
+
+    final PhoneVerificationCompleted verifiedSuccess = (AuthCredential auth) async {
+      print("Verified");
+      await FireBase.auth.signInWithCredential(auth).then((AuthResult value) async {
+        if (value.user != null) {
+          print("User not null");
+        } else {
+          _showInfoDialog(context, "Something went wrong, please try again. If problem persists, contact us at hello@shopapp.com");
+        }
+      }).catchError((error) {
+        print(error);
+      });
+    };
+
+    final PhoneVerificationFailed veriFailed = (AuthException exception) {
+      print('${exception.message}');
+    };
+
+    print(widget.userModel.phoneNumber);
+
+    await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: "+91" + widget.userModel.phoneNumber,
+        codeAutoRetrievalTimeout: autoRetrieve,
+        codeSent: smsCodeSent,
+        timeout: const Duration(seconds: 120),
+        verificationCompleted: verifiedSuccess,
+        verificationFailed: veriFailed);
+  }
+
+
+  void signIn() {
+    final AuthCredential credential = PhoneAuthProvider.getCredential(verificationId: verificationId, smsCode: code);
+    FirebaseAuth.instance.signInWithCredential(credential)
+        .then((user) async {
+          if(user != null) {
+            await Firestore.instance.collection('uid_type')
+                .where('uid', isEqualTo: user.user.uid)
+                .getDocuments()
+                .then((docs) async{
+              print("uid");
+              if(docs.documents.length == 0){
+                print("adding uid");
+                Firestore.instance.collection('uid_type')
+                    .add({'uid': user.user.uid,
+                  'type': 'user',
+                }).then((val) async{
+                  print("added uid, adding user");
+                  await Firestore.instance.collection('users')
+                      .add({'phone_number': widget.userModel.phoneNumber,
+                    'name': widget.userModel.userName,
+                    'address': widget.userModel.address,
+                    'lat': widget.userModel.coordinates.latitude,
+                    'lon': widget.userModel.coordinates.longitude,
+                    'geohash': widget.userModel.geohash,
+                    'uid': user.user.uid,
+                    'token': 'none',
+                  }).then((val2){
+                    print("done adding user, pushing to home");
+                    Navigator.of(context).pushNamedAndRemoveUntil('/home', (_) => false);
+                  });
+                });
+              } else {
+                _showInfoDialog(context, "Your account already exists, try signing in.");
+                print("user already exists");
+              }
+            });
+          } else {
+            print("user null here");
+          }
+    }).catchError((error) {
+      print(error.message);
+    });
+  }
+
+
+  signInAction() async {
     if (code.length != 6) {
       //  TODO: show error
     }
     _showInfoDialog(context, "Authenticating...");
-    await FirebasePhoneAuth.signInWithPhoneNumberUser(smsCode: code, userModel: widget.userModel);
-    sleep(Duration(seconds: 6));
-    Navigator.pop(context);
+    FirebaseAuth.instance.currentUser().then((user) async {
+      if (user != null) {
+        print("User");
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (_) => false);
+      } else {
+        print("Check");
+        //Navigator.of(context).pop();
+        signIn();
+      }
+    });
+    //await FirebasePhoneAuth.signInWithPhoneNumberUser(smsCode: code, userModel: widget.userModel);
+    //sleep(Duration(seconds: 6));
+    //Navigator.pop(context);
     //Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MyHomePage()));
-    Navigator.pushNamedAndRemoveUntil(context, "/home", (_) => false);
+    //Navigator.pushNamedAndRemoveUntil(context, "/home", (_) => false);
 
   }
 

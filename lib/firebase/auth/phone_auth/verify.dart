@@ -13,9 +13,9 @@ import '../../../pin_test.dart';
 
 // ignore: must_be_immutable
 class PhoneAuthVerify extends StatefulWidget {
-  PhoneAuthVerify({Key key, this.userModel}) : super(key: key);
+  PhoneAuthVerify({Key key, this.phoneNumber}) : super(key: key);
 
-  UserModel userModel;
+  String phoneNumber;
   /*
    *  cardBackgroundColor & logo values will be passed to the constructor
    *  here we access these params in the _PhoneAuthState using "widget"
@@ -38,6 +38,9 @@ class _PhoneAuthVerifyState extends State<PhoneAuthVerify> {
   FocusNode focusNode5 = FocusNode();
   FocusNode focusNode6 = FocusNode();
   String code = "";
+  String phoneNo;
+  String smsCode;
+  String verificationId;
 
   @override
   void initState() {
@@ -49,8 +52,7 @@ class _PhoneAuthVerifyState extends State<PhoneAuthVerify> {
 //      //if (FirebasePhoneAuth.phoneAuthState.isClosed)
 //
 //    });
-    FirebasePhoneAuth.phoneAuthState.stream
-        .listen((PhoneAuthState state) => print(state));
+    verifyPhone();
     super.initState();
   }
 
@@ -183,15 +185,68 @@ class _PhoneAuthVerifyState extends State<PhoneAuthVerify> {
         ],
       );
 
-  signIn() async {
+  Future<void> verifyPhone() async {
+    final PhoneCodeAutoRetrievalTimeout autoRetrieve = (String verId) {
+      this.verificationId = verId;
+    };
+
+    final PhoneCodeSent smsCodeSent = (String verId, [int forceCodeResend]) {
+      print("Code sent successfully");
+      this.verificationId = verId;
+    };
+
+    final PhoneVerificationCompleted verifiedSuccess = (AuthCredential auth) async {
+      FireBase.auth.signInWithCredential(auth).then((AuthResult value) async {
+        if (value.user != null) {
+          Navigator.of(context).pushNamedAndRemoveUntil('/home', (_) => false);
+        } else {
+          _showInfoDialog(context, "Something went wrong, please try again. If problem persists, contact us at hello@shopapp.com");
+        }
+      }).catchError((error) {
+        print(error);
+      });
+    };
+
+    final PhoneVerificationFailed veriFailed = (AuthException exception) {
+      print('${exception.message}');
+    };
+
+    await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: "+91"+ widget.phoneNumber,
+        codeAutoRetrievalTimeout: autoRetrieve,
+        codeSent: smsCodeSent,
+        timeout: const Duration(seconds: 120),
+        verificationCompleted: verifiedSuccess,
+        verificationFailed: veriFailed);
+  }
+
+
+  void signIn() {
+    final AuthCredential credential = PhoneAuthProvider.getCredential(verificationId: verificationId, smsCode: code);
+
+    FirebaseAuth.instance.signInWithCredential(credential)
+        .then((user) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/home', (_) => false);
+    }).catchError((error) {
+      print(error.message);
+    });
+  }
+
+
+  signInAction() async {
     if (code.length != 6) {
       //  TODO: show error
     }
     _showInfoDialog(context, "Authenticating...");
-    await FirebasePhoneAuth.signInWithPhoneNumber(smsCode: code);
-    sleep(Duration(seconds: 3));
-    Navigator.pop(context);
-    Navigator.pushNamedAndRemoveUntil(context, "/home", (_) => false);
+    FirebaseAuth.instance.currentUser().then((user) {
+      if (user != null) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/home', (_) => false);
+      } else {
+        //Navigator.of(context).pop();
+        signIn();
+      }
+    });
+
   }
 
   _showInfoDialog(BuildContext context, String text) {

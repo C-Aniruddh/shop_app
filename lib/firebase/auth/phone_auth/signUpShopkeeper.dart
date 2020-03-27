@@ -444,9 +444,9 @@ class SignUpShopkeeperState extends State<SignUpShopkeeper> {
   }
 
   startPhoneAuth() {
-    FirebasePhoneAuth.instantiate(
-        phoneNumber: countries[_selectedCountryIndex].dialCode +
-            _phoneNumberController.text);
+    //FirebasePhoneAuth.instantiate(
+     //   phoneNumber: countries[_selectedCountryIndex].dialCode +
+   //         _phoneNumberController.text);
 
     GeoHasher geoHasher = GeoHasher();
     String geohash = geoHasher.encode(shopCoordinates.longitude, shopCoordinates.latitude, precision: 8);

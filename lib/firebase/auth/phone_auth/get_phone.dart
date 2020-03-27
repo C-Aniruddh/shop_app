@@ -369,12 +369,12 @@ class _PhoneAuthGetPhoneState extends State<PhoneAuthGetPhone> {
   }
 
   startPhoneAuth() {
-    FirebasePhoneAuth.instantiate(
-        phoneNumber: countries[_selectedCountryIndex].dialCode +
-            _phoneNumberController.text);
+    //FirebasePhoneAuth.instantiate(
+     //   phoneNumber: countries[_selectedCountryIndex].dialCode +
+      //      _phoneNumberController.text);
 
     Navigator.of(context).pushReplacement(CupertinoPageRoute(
-            builder: (BuildContext context) => PhoneAuthVerify()));
+            builder: (BuildContext context) => PhoneAuthVerify(phoneNumber: _phoneNumberController.text,)));
 
 //    FirebasePhoneAuth.stateStream.listen((state) {
 //
