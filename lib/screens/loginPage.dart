@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_firebase/data_models/countries.dart';
 import 'package:flutter_firebase/firebase/auth/phone_auth/code.dart';
-import 'package:flutter_firebase/firebase/auth/phone_auth/verifyUser.dart';
 import 'package:flutter_firebase/utils/constants.dart';
 import 'package:flutter_firebase/firebase/auth/phone_auth/code.dart' show FirebasePhoneAuth, phoneAuthState;
 import 'package:flutter_firebase/utils/widgets.dart';

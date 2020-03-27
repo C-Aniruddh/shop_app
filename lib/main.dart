@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_firebase/test_screen.dart';
 import 'firebase/auth/phone_auth/get_phone.dart';
@@ -7,66 +8,67 @@ import 'package:flutter/material.dart';
 import 'package:flutter_firebase/screens/homePage.dart';
 import 'package:google_map_location_picker/generated/i18n.dart' as location_picker;
 
+void main() {
+  runApp(MyApp());
+}
 
-void main() => runApp(MyApp());
+class MyApp extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() => _MyAppState();
+}
 
-
-class MyApp extends StatelessWidget {
+class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-
-      theme: ThemeData(brightness: Brightness.dark),
-      home: MyHomePage(title: "ShopApp",),
-      debugShowCheckedModeBanner: false,
-      routes: {
-        "/home": (_) => MyHomePage(title: "Home"),
-        "/login": (_) => LoginPage(),
-      },
+    return FutureBuilder(
+        future: FirebaseAuth.instance.currentUser(),
+        builder: (BuildContext context, AsyncSnapshot snapshot){
+          if(snapshot.hasData){
+            return MaterialApp(
+              title: 'ShopApp',
+              debugShowCheckedModeBanner: false,
+              home: MyHomePage(),
+              theme: ThemeData(
+                brightness: Brightness.dark,
+                primaryColor: Colors.grey[900],
+                accentColor: Colors.cyan[400],
+                highlightColor: Colors.cyan[100],
+                splashColor: Colors.cyan[900],
+                textTheme: TextTheme(
+                  headline: TextStyle(fontSize: 24.0,),
+                  title: TextStyle(fontSize: 18.0,),
+                  body1: TextStyle(fontSize: 14.0,),
+                ),
+              ),
+              routes: <String, WidgetBuilder>{
+                "/home": (_) => MyHomePage(),
+                "/login": (_) => LoginPage(),
+              },
+            );
+          }
+          return MaterialApp(
+            title: 'ShopApp',
+            debugShowCheckedModeBanner: false,
+            home: LoginPage(),
+            theme: ThemeData(
+              brightness: Brightness.dark,
+              primaryColor: Colors.grey[900],
+              accentColor: Colors.cyan[400],
+              highlightColor: Colors.cyan[100],
+              splashColor: Colors.cyan[900],
+              textTheme: TextTheme(
+                headline: TextStyle(fontSize: 24.0,),
+                title: TextStyle(fontSize: 18.0,),
+                body1: TextStyle(fontSize: 14.0,),
+              ),
+            ),
+            routes: <String, WidgetBuilder>{
+              "/home": (_) => MyHomePage(),
+              "/login": (_) => LoginPage(),
+            },
+          );
+        }
     );
   }
 }
 
-enum States { Show, Hide }
-
-StreamController loaderStream = StreamController<States>();
-
-class StatelessStreamBuilder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: <Widget>[
-        TestPage(),
-        StreamBuilder<States>(
-            initialData: States.Hide,
-            stream: loaderStream.stream,
-            builder: (BuildContext context, snapshot) {
-              if (snapshot.hasData) {
-                if (snapshot.data == States.Hide) {
-                  return Container();
-                } else {
-                  return Stack(
-                    overflow: Overflow.visible,
-                    children: <Widget>[
-                      ModalBarrier(
-                        dismissible: false,
-                        color: Colors.grey.withOpacity(0.4),
-                      ),
-                      Center(
-                        child: Card(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: CircularProgressIndicator(),
-                            )),
-                      )
-                    ],
-                  );
-                }
-              } else {
-                return Container();
-              }
-            })
-      ],
-    );
-  }
-}
