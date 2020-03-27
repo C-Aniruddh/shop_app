@@ -186,17 +186,39 @@ class _PhoneAuthVerifyState extends State<PhoneAuthVerify> {
             color: Colors.white,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30.0)),
+          ),
+
+
+          RaisedButton(
+            elevation: 16.0,
+            onPressed: () {
+              FirebaseAuth.instance.signOut();
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                'LOGOUT',
+                style: TextStyle(
+                    color: Colors.blueGrey, fontSize: 18.0),
+              ),
+            ),
+            color: Colors.white,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30.0)),
           )
+
         ],
       );
 
   Future<void> verifyPhone() async {
+
     final PhoneCodeAutoRetrievalTimeout autoRetrieve = (String verId) {
       this.verificationId = verId;
     };
 
     final PhoneCodeSent smsCodeSent = (String verId, [int forceCodeResend]) {
       this.verificationId = verId;
+      print("CODE SENT");
     };
 
     final PhoneVerificationCompleted verifiedSuccess = (AuthCredential auth) async {
@@ -204,6 +226,37 @@ class _PhoneAuthVerifyState extends State<PhoneAuthVerify> {
       await FireBase.auth.signInWithCredential(auth).then((AuthResult value) async {
         if (value.user != null) {
           print("User not null");
+          await Firestore.instance.collection('uid_type')
+              .where('uid', isEqualTo: value.user.uid)
+              .getDocuments()
+              .then((docs) async{
+            print("uid");
+            if(docs.documents.length == 0){
+              print("adding uid");
+              Firestore.instance.collection('uid_type')
+                  .add({'uid': value.user.uid,
+                'type': 'user',
+              }).then((val) async{
+                print("added uid, adding user");
+                await Firestore.instance.collection('users')
+                    .add({'phone_number': widget.userModel.phoneNumber,
+                  'name': widget.userModel.userName,
+                  'address': widget.userModel.address,
+                  'lat': widget.userModel.coordinates.latitude,
+                  'lon': widget.userModel.coordinates.longitude,
+                  'geohash': widget.userModel.geohash,
+                  'uid': value.user.uid,
+                  'token': 'none',
+                }).then((val2){
+                  print("done adding user, pushing to home");
+                  Navigator.of(context).pushNamedAndRemoveUntil('/home', (_) => false);
+                });
+              });
+            } else {
+              _showInfoDialog(context, "Your account already exists, try signing in.");
+              print("user already exists");
+            }
+          });
         } else {
           _showInfoDialog(context, "Something went wrong, please try again. If problem persists, contact us at hello@shopapp.com");
         }
@@ -222,7 +275,7 @@ class _PhoneAuthVerifyState extends State<PhoneAuthVerify> {
         phoneNumber: "+91" + widget.userModel.phoneNumber,
         codeAutoRetrievalTimeout: autoRetrieve,
         codeSent: smsCodeSent,
-        timeout: const Duration(seconds: 120),
+        timeout: const Duration(seconds: 5),
         verificationCompleted: verifiedSuccess,
         verificationFailed: veriFailed);
   }

@@ -192,6 +192,35 @@ class _PhoneAuthVerifyStateShop extends State<PhoneAuthVerifyShop> {
       FireBase.auth.signInWithCredential(auth).then((AuthResult value) async {
         if (value.user != null) {
           print("user not null");
+          await Firestore.instance.collection('uid_type')
+              .where('uid', isEqualTo: value.user.uid)
+              .getDocuments()
+              .then((docs) async{
+            if(docs.documents.length == 0){
+              Firestore.instance.collection('uid_type')
+                  .add({'uid': value.user.uid,
+                'type': 'shop',
+              }).then((val){
+                Firestore.instance.collection('users')
+                    .add({'phone_number': widget.shopkeeperModel.phoneNumber,
+                  'limit': 10,
+                  'shop_name': widget.shopkeeperModel.shopName,
+                  'shop_contact_name': widget.shopkeeperModel.contactName,
+                  'shop_address': widget.shopkeeperModel.address,
+                  'shop_lat': widget.shopkeeperModel.coordinates.latitude,
+                  'shop_lon': widget.shopkeeperModel.coordinates.longitude,
+                  'shop_geohash': widget.shopkeeperModel.geohash,
+                  'shop_GST': widget.shopkeeperModel.GST,
+                  'uid': value.user.uid,
+                  'token': 'none'}).then((val2){
+                  Navigator.of(context).pushNamedAndRemoveUntil('/home', (_) => false);
+                });
+              });
+            } else {
+              _showInfoDialog(context, "Your account already exists, try signing in.");
+              print("user already exists");
+            }
+          });
         } else {
           _showInfoDialog(context, "Something went wrong, please try again. If problem persists, contact us at hello@shopapp.com");
         }
@@ -208,7 +237,7 @@ class _PhoneAuthVerifyStateShop extends State<PhoneAuthVerifyShop> {
         phoneNumber: "+91" + widget.shopkeeperModel.phoneNumber,
         codeAutoRetrievalTimeout: autoRetrieve,
         codeSent: smsCodeSent,
-        timeout: const Duration(seconds: 120),
+        timeout: const Duration(seconds: 5),
         verificationCompleted: verifiedSuccess,
         verificationFailed: veriFailed);
   }
