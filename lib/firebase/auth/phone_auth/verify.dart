@@ -228,6 +228,7 @@ class _PhoneAuthVerifyState extends State<PhoneAuthVerify> {
         .then((user) {
       Navigator.of(context).pushNamedAndRemoveUntil('/home', (_) => false);
     }).catchError((error) {
+      _showInfoDialog(context, "The otp entered is invalid");
       print(error.message);
     });
   }
