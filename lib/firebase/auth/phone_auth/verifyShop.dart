@@ -225,11 +225,13 @@ class _PhoneAuthVerifyStateShop extends State<PhoneAuthVerifyShop> {
                 .getDocuments()
                 .then((docs) async{
               if(docs.documents.length == 0){
+                print("adding uid");
                 Firestore.instance.collection('uid_type')
                     .add({'uid': user.user.uid,
                   'type': 'shop',
-                }).then((val){
-                  Firestore.instance.collection('users')
+                }).then((val) async {
+                  print("added uid, adding shop");
+                  await Firestore.instance.collection('shops')
                       .add({'phone_number': widget.shopkeeperModel.phoneNumber,
                     'limit': 10,
                     'shop_name': widget.shopkeeperModel.shopName,
