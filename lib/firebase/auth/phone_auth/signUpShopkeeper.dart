@@ -12,7 +12,6 @@ import '../../../data_models/ShopkeeperModel.dart';
 import '../../../screens/homePage.dart';
 import 'code.dart' show FirebasePhoneAuth, phoneAuthState;
 import '../../../utils/widgets.dart';
-import 'package:google_places_picker/google_places_picker.dart';
 import 'package:google_map_location_picker/google_map_location_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:dart_geohash/dart_geohash.dart';

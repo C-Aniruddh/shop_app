@@ -29,7 +29,6 @@ dependencies:
   flutter_signin_button: ^1.0.0
   cuberto_bottom_bar: ^1.1.0
   firebase_messaging: '^6.0.12'
-  google_places_picker: ^2.1.0+2
   google_map_location_picker: ^3.2.1+2
   dart_geohash: ^1.0.2
   latlong: ^0.6.1

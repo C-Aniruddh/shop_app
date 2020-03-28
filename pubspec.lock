@@ -280,13 +280,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "0.5.25+1"
-  google_places_picker:
-    dependency: "direct main"
-    description:
-      name: google_places_picker
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "2.1.0+2"
   html:
     dependency: transitive
     description:
