@@ -7,7 +7,7 @@ class FirebaseNotifications {
   Future<String> setUpFirebase() async {
     String userToken = "";
     _firebaseMessaging = FirebaseMessaging();
-    firebaseCloudMessaging_Listeners();
+    firebaseCloudMessagingListeners();
     //_firebaseMessaging.getToken().then((token) {
       //userToken = token;
     //});
@@ -15,8 +15,8 @@ class FirebaseNotifications {
     return userToken;
   }
 
-  void firebaseCloudMessaging_Listeners() {
-    if (Platform.isIOS) iOS_Permission();
+  void firebaseCloudMessagingListeners() {
+    if (Platform.isIOS) iOSPermissions();
 
     _firebaseMessaging.getToken().then((token) {
       print(token);
@@ -35,7 +35,7 @@ class FirebaseNotifications {
     );
   }
 
-  void iOS_Permission() {
+  void iOSPermissions() {
     _firebaseMessaging.requestNotificationPermissions(
         IosNotificationSettings(sound: true, badge: true, alert: true));
     _firebaseMessaging.onIosSettingsRegistered

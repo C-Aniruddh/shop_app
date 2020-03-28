@@ -1,7 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,8 +11,8 @@ import '../../../utils/widgets.dart';
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class PhoneAuthGetPhone  extends StatefulWidget {
-  Color cardBackgroundColor = Color(0xFF6874C2);
-  String logo = Assets.firebase;
+  final Color cardBackgroundColor = Color(0xFF6874C2);
+  final String logo = Assets.firebase;
 
   @override
   State<StatefulWidget> createState() => PhoneAuthGetPhoneState();
@@ -188,14 +186,14 @@ class PhoneAuthGetPhoneState extends State<PhoneAuthGetPhone> {
   }
 
   sendOTP() async {
-    await _verifyPhoneNumber();
+    _verifyPhoneNumber();
     setState(() {
       otpSent = true;
     });
   }
 
   verifyOTP() async {
-    await _signInWithPhoneNumber();
+    _signInWithPhoneNumber();
     setState(() {
       otpSent = true;
     });

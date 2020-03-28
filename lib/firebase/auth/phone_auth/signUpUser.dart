@@ -5,10 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_firebase/data_models/countries.dart';
-import 'package:flutter_firebase/firebase/auth/phone_auth/code.dart';
 import 'package:flutter_firebase/utils/constants.dart';
 import '../../../screens/homePage.dart';
-import 'code.dart' show FirebasePhoneAuth, phoneAuthState;
 import '../../../utils/widgets.dart';
 import 'package:flutter_firebase/data_models/userModel.dart';
 import 'package:google_map_location_picker/google_map_location_picker.dart';
@@ -18,9 +16,8 @@ import 'package:dart_geohash/dart_geohash.dart';
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class SignUpUser extends StatefulWidget {
-  Color cardBackgroundColor = Color(0xFF6874C2);
-  String logo = Assets.firebase;
-  String appName = "Awesome app";
+  final Color cardBackgroundColor = Color(0xFF6874C2);
+  final String logo = Assets.firebase;
 
   @override
   SignUpUserState createState() => SignUpUserState();

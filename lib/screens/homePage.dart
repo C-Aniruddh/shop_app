@@ -8,7 +8,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_firebase/screens/shopPage.dart';
 import 'package:flutter_firebase/utils/widgets.dart';
 import 'package:latlong/latlong.dart';
-import 'package:map_launcher/map_launcher.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 
@@ -44,9 +43,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int currentPage = 0;
   String currentTitle = "Home";
-  Color currentColor = Colors.cyan;
-
-  String user_uid;
+  String userUID;
 
   bool userLoaded = false;
 
@@ -59,6 +56,16 @@ class _MyHomePageState extends State<MyHomePage> {
   TextEditingController startTimeController = new TextEditingController();
   TextEditingController endTimeController = new TextEditingController();
   TextEditingController otpController = new TextEditingController();
+  TextEditingController _dataController = TextEditingController();
+
+  @override
+  void dispose() {
+    startTimeController.dispose();
+    endTimeController.dispose();
+    otpController.dispose();
+    _dataController.dispose();
+    super.dispose();
+  }
 
   void setUserData(String type, String uid) async {
     token = await FirebaseNotifications().setUpFirebase();
@@ -86,17 +93,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
   List<String> calculateFilter() {
     if (widget.type == "user" && userLoaded) {
-      String address_geohash = userData['geohash'];
-      double add_lat = userData['lat'];
-      double add_lon = userData['lon'];
-      print(add_lat);
-      print(add_lon);
+      double addLat = userData['lat'];
+      double addLon = userData['lon'];
+      print(addLat);
+      print(addLon);
       num queryDistance = 1000.round();
 
       final Distance distance = const Distance();
       //final num query_distance = (EARTH_RADIUS * PI / 4).round();
 
-      final p1 = new LatLng(add_lat, add_lon);
+      final p1 = new LatLng(addLat, addLon);
       final upperP = distance.offset(p1, queryDistance, 45);
       final lowerP = distance.offset(p1, queryDistance, 220);
 
@@ -108,10 +114,10 @@ class _MyHomePageState extends State<MyHomePage> {
       String lower = geoHasher.encode(lowerP.longitude, lowerP.latitude);
       String upper = geoHasher.encode(upperP.longitude, upperP.latitude);
 
-      List<String> upper_lower = [];
-      upper_lower.add(upper);
-      upper_lower.add(lower);
-      return upper_lower;
+      List<String> upperLower = [];
+      upperLower.add(upper);
+      upperLower.add(lower);
+      return upperLower;
     } else {
       return [];
     }
@@ -149,38 +155,37 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
   }
 
-  String distanceBetween(String shop_geohash) {
-    String user_geohash = userData['geohash'];
+  String distanceBetween(String shopGeoHash) {
+    String userGeoHash = userData['geohash'];
     GeoHasher geoHasher = GeoHasher();
-    List<double> shop_coordinates = geoHasher.decode(shop_geohash);
-    List<double> user_coordinates = geoHasher.decode(user_geohash);
-    print(user_coordinates);
+    List<double> shopCoordinates = geoHasher.decode(shopGeoHash);
+    List<double> userCoordinates = geoHasher.decode(userGeoHash);
+    print(userCoordinates);
     Distance distance = new Distance();
     double meter = distance(
-        new LatLng(shop_coordinates[1], shop_coordinates[0]),
-        new LatLng(user_coordinates[1], user_coordinates[0]));
+        new LatLng(shopCoordinates[1], shopCoordinates[0]),
+        new LatLng(userCoordinates[1], userCoordinates[0]));
     return meter.round().toString();
   }
 
-  List<DocumentSnapshot> filterByDistance(List<DocumentSnapshot> all_docs) {
-    List<DocumentSnapshot> to_return = [];
-    for (var i = 0; i < all_docs.length; i++) {
-      if (double.parse(distanceBetween(all_docs[i]['shop_geohash'])) < 1000) {
-        to_return.add(all_docs[i]);
+  List<DocumentSnapshot> filterByDistance(List<DocumentSnapshot> allDocs) {
+    List<DocumentSnapshot> toReturn = [];
+    for (var i = 0; i < allDocs.length; i++) {
+      if (double.parse(distanceBetween(allDocs[i]['shop_geohash'])) < 1000) {
+        toReturn.add(allDocs[i]);
       } else {
         // do nothing
       }
     }
-    return to_return;
+    return toReturn;
   }
 
   Widget buildHomeUser() {
-    List<String> upper_lower = calculateFilter();
-    String upper = upper_lower[0];
-    String lower = upper_lower[1];
+    List<String> upperLower = calculateFilter();
+    String upper = upperLower[0];
+    String lower = upperLower[1];
 
     return Container(
-        padding: const EdgeInsets.all(10.0),
         child: StreamBuilder<QuerySnapshot>(
           stream: Firestore.instance
               .collection('shops')
@@ -192,49 +197,72 @@ class _MyHomePageState extends State<MyHomePage> {
             if (snapshot.hasError) return new Text('Error: ${snapshot.error}');
             switch (snapshot.connectionState) {
               case ConnectionState.waiting:
-                return new Text('Loading...');
-              default:
-                return new ListView(
-                  children: filterByDistance(snapshot.data.documents)
-                      .map((DocumentSnapshot document) {
-                    return Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: new ListTile(
-                          onTap: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => ShopPage(
-                                          shopDetails: document,
-                                          userDetails: userData,
-                                        )));
-                          },
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.cyan,
-                            child: Text(document['shop_name'][0]
-                                .toString()
-                                .toUpperCase()),
-                          ),
-                          title: Text(document['shop_name']),
-                          subtitle: Text(
-                            distanceBetween(document['shop_geohash']) +
-                                " meters away",
-                          ),
-                          trailing: IconButton(
-                            icon: Icon(Icons.map),
-                            onPressed: () {
-                              print("Open");
-                              MapUtils.openMap(
-                                  document['shop_lat'], document['shop_lon']);
-                            },
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                return new Center(
+                  child: CircularProgressIndicator(
+                    backgroundColor: Theme.of(context).accentColor,
+                  ),
                 );
+              default:
+                List<DocumentSnapshot> filterList = new List();
+                filterList = filterByDistance(snapshot.data.documents);
+                if(filterList.length<1) {
+                  return Center(
+                    child: Text(
+                      "There are no shops around you."
+                    ),
+                  );
+                }
+                else {
+                  return new Container(
+                      child: ListView.builder(
+                          itemCount: filterList.length,
+                          itemBuilder: (BuildContext ctxt, int index) {
+                            var document = filterList[index];
+                            return Card(
+                              margin: EdgeInsets.all(10.0),
+                              elevation: 2,
+                              child: Container(
+                                child: new ListTile(
+                                  contentPadding: EdgeInsets.all(8),
+                                  onTap: () {
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => ShopPage(
+                                              shopDetails: document,
+                                              userDetails: userData,
+                                            )));
+                                  },
+                                  leading: Container(
+                                    padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                                    child: CircleAvatar(
+                                      backgroundColor: Theme.of(context).accentColor,
+                                      child: Text(document['shop_name'][0]
+                                          .toString()
+                                          .toUpperCase()),
+                                    ),
+                                  ),
+                                  title: Text(document['shop_name']),
+                                  subtitle: Text(
+                                    distanceBetween(document['shop_geohash']) +
+                                        " meters away",
+                                  ),
+                                  trailing: IconButton(
+                                    padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                                    icon: Icon(Icons.map),
+                                    onPressed: () {
+                                      print("Open");
+                                      MapUtils.openMap(
+                                          document['shop_lat'], document['shop_lon']);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                      )
+                  );
+                }
             }
           },
         ));
@@ -300,7 +328,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                   child: ListTile(
                                                     leading: CircleAvatar(
                                                       backgroundColor:
-                                                          Colors.cyan,
+                                                          Theme.of(context).accentColor,
                                                       child: Icon(Icons.lock),
                                                     ),
                                                     title: Text("OTP"),
@@ -314,7 +342,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                   child: ListTile(
                                                     leading: CircleAvatar(
                                                       backgroundColor:
-                                                          Colors.cyan,
+                                                          Theme.of(context).accentColor,
                                                       child: Icon(Icons.timer),
                                                     ),
                                                     title: Text("Start Time"),
@@ -329,7 +357,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                   child: ListTile(
                                                     leading: CircleAvatar(
                                                       backgroundColor:
-                                                          Colors.cyan,
+                                                          Theme.of(context).accentColor,
                                                       child: Icon(Icons.timer),
                                                     ),
                                                     title: Text("End Time"),
@@ -351,53 +379,75 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget buildAppointmentsUser() {
     List<String> status = ['pending', 'scheduled'];
     return Container(
-        padding: const EdgeInsets.all(10.0),
         child: StreamBuilder<QuerySnapshot>(
           stream: Firestore.instance
               .collection('appointments')
               .where('appointment_status', whereIn: status)
-              .where('shopper_uid', isEqualTo: user_uid)
+              .where('shopper_uid', isEqualTo: userUID)
               .snapshots(),
           builder:
               (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
             if (snapshot.hasError) return new Text('Error: ${snapshot.error}');
             switch (snapshot.connectionState) {
               case ConnectionState.waiting:
-                return new Text('Loading...');
-              default:
-                return new ListView(
-                  children:
-                      snapshot.data.documents.map((DocumentSnapshot document) {
-                    return Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: new ListTile(
-                          onTap: () {
-                            _showModalAppointmentDetails(document);
-
-                            // Navigator.push(context, MaterialPageRoute(builder: (context)=> ShopPage(shopDetails: document, userDetails: userData,)));
-                          },
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.cyan,
-                            child: Text(document['shop_name'][0]
-                                .toString()
-                                .toUpperCase()),
-                          ),
-                          title: Text(document['shop_name']),
-                          subtitle: Text(document['appointment_status']),
-                          trailing: IconButton(
-                            icon: Icon(Icons.info),
-                            onPressed: () {
-                              print("Open");
-                              _showModalAppointmentDetails(document);
-                            },
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                return new Center(
+                  child: CircularProgressIndicator(
+                    backgroundColor: Theme.of(context).accentColor,
+                  ),
                 );
+              default:
+                List<DocumentSnapshot> documents = new List();
+                documents = (snapshot.data.documents);
+                if(documents.length<1) {
+                  return Center(
+                    child: Text(
+                        "You currently have no appointments."
+                    ),
+                  );
+                }
+                else {
+                  return new Container(
+                      child: ListView.builder(
+                          itemCount: documents.length,
+                          itemBuilder: (BuildContext ctxt, int index) {
+                            DocumentSnapshot document = documents[index];
+                            return Card(
+                              margin: EdgeInsets.all(10.0),
+                              elevation: 2,
+                              child: Container(
+                                child: new ListTile(
+                                  contentPadding: EdgeInsets.all(8),
+                                  onTap: () {
+                                    _showModalAppointmentDetails(document);
+
+                                    // Navigator.push(context, MaterialPageRoute(builder: (context)=> ShopPage(shopDetails: document, userDetails: userData,)));
+                                  },
+                                  leading: Container(
+                                    padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                                    child: CircleAvatar(
+                                      backgroundColor: Theme.of(context).accentColor,
+                                      child: Text(document['shop_name'][0]
+                                          .toString()
+                                          .toUpperCase()),
+                                    ),
+                                  ),
+                                  title: Text(document['shop_name']),
+                                  subtitle: Text(document['appointment_status']),
+                                  trailing: IconButton(
+                                    padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                                    icon: Icon(Icons.info),
+                                    onPressed: () {
+                                      print("Open");
+                                      _showModalAppointmentDetails(document);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                      )
+                  );
+                }
             }
           },
         ));
@@ -405,7 +455,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget buildAppointmentsDoneUser() {
     return Container(
-        padding: const EdgeInsets.all(10.0),
         child: StreamBuilder<QuerySnapshot>(
           stream: Firestore.instance
               .collection('appointments')
@@ -417,40 +466,63 @@ class _MyHomePageState extends State<MyHomePage> {
             if (snapshot.hasError) return new Text('Error: ${snapshot.error}');
             switch (snapshot.connectionState) {
               case ConnectionState.waiting:
-                return new Text('Loading...');
-              default:
-                return new ListView(
-                  children:
-                      snapshot.data.documents.map((DocumentSnapshot document) {
-                    return Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: new ListTile(
-                          onTap: () {
-                            _showModalAppointmentDetails(document);
-                            //Navigator.push(context, MaterialPageRoute(builder: (context)=> ShopPage(shopDetails: document, userDetails: userData,)));
-                          },
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.cyan,
-                            child: Text(document['shop_name'][0]
-                                .toString()
-                                .toUpperCase()),
-                          ),
-                          title: Text(document['shop_name']),
-                          subtitle: Text(document['appointment_status']),
-                          trailing: IconButton(
-                            icon: Icon(Icons.info),
-                            onPressed: () {
-                              print("Open");
-                              _showModalAppointmentDetails(document);
-                            },
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                return new Center(
+                  child: CircularProgressIndicator(
+                    backgroundColor: Theme.of(context).accentColor,
+                  ),
                 );
+              default:
+                List<DocumentSnapshot> documents = new List();
+                documents = (snapshot.data.documents);
+                if(documents.length<1) {
+                  return Center(
+                    child: Text(
+                        "You have never booked an appointment."
+                    ),
+                  );
+                }
+                else {
+                  return new Container(
+                      child: ListView.builder(
+                          itemCount: documents.length,
+                          itemBuilder: (BuildContext ctxt, int index) {
+                            DocumentSnapshot document = documents[index];
+                            return Card(
+                              margin: EdgeInsets.all(10.0),
+                              elevation: 2,
+                              child: Container(
+                                child: new ListTile(
+                                  contentPadding: EdgeInsets.all(8),
+                                  onTap: () {
+                                    _showModalAppointmentDetails(document);
+                                    //Navigator.push(context, MaterialPageRoute(builder: (context)=> ShopPage(shopDetails: document, userDetails: userData,)));
+                                  },
+                                  leading: Container(
+                                    padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                                    child: CircleAvatar(
+                                      backgroundColor: Theme.of(context).accentColor,
+                                      child: Text(document['shop_name'][0]
+                                          .toString()
+                                          .toUpperCase()),
+                                    ),
+                                  ),
+                                  title: Text(document['shop_name']),
+                                  subtitle: Text(document['appointment_status']),
+                                  trailing: IconButton(
+                                    padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                                    icon: Icon(Icons.info),
+                                    onPressed: () {
+                                      print("Open");
+                                      _showModalAppointmentDetails(document);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                      )
+                  );
+                }
             }
           },
         ));
@@ -458,7 +530,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget buildHomeShop() {
     return Container(
-        padding: const EdgeInsets.all(10.0),
         child: StreamBuilder<QuerySnapshot>(
           stream: Firestore.instance
               .collection('appointments')
@@ -470,42 +541,65 @@ class _MyHomePageState extends State<MyHomePage> {
             if (snapshot.hasError) return new Text('Error: ${snapshot.error}');
             switch (snapshot.connectionState) {
               case ConnectionState.waiting:
-                return new Text('Loading...');
-              default:
-                return new ListView(
-                  children:
-                      snapshot.data.documents.map((DocumentSnapshot document) {
-                    return Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: new ListTile(
-                          onTap: () {
-                            _showCompleteDialog(
-                                context, document.documentID, document['otp']);
-                            //Navigator.push(context, MaterialPageRoute(builder: (context)=> ShopPage(shopDetails: document, userDetails: userData,)));
-                          },
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.cyan,
-                            child: Text(document['shopper_name'][0]
-                                .toString()
-                                .toUpperCase()),
-                          ),
-                          title: Text(document['shopper_name']),
-                          subtitle: Text(document['appointment_status']),
-                          trailing: IconButton(
-                            icon: Icon(Icons.check),
-                            onPressed: () {
-                              print("Open");
-                              _showCompleteDialog(context, document.documentID,
-                                  document['otp']);
-                            },
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                return new Center(
+                  child: CircularProgressIndicator(
+                    backgroundColor: Theme.of(context).accentColor,
+                  ),
                 );
+              default:
+                List<DocumentSnapshot> documents = new List();
+                documents = (snapshot.data.documents);
+                if(documents.length<1) {
+                  return Center(
+                    child: Text(
+                        "You have no scheduled appointments."
+                    ),
+                  );
+                }
+                else {
+                  return new Container(
+                      child: ListView.builder(
+                          itemCount: documents.length,
+                          itemBuilder: (BuildContext ctxt, int index) {
+                            DocumentSnapshot document = documents[index];
+                            return Card(
+                              margin: EdgeInsets.all(10.0),
+                              elevation: 2,
+                              child: Container(
+                                child: new ListTile(
+                                  contentPadding: EdgeInsets.all(8),
+                                  onTap: () {
+                                    _showCompleteDialog(
+                                        context, document.documentID, document['otp']);
+                                    //Navigator.push(context, MaterialPageRoute(builder: (context)=> ShopPage(shopDetails: document, userDetails: userData,)));
+                                  },
+                                  leading: Container(
+                                      padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                                      child: CircleAvatar(
+                                      backgroundColor: Theme.of(context).accentColor,
+                                      child: Text(document['shopper_name'][0]
+                                          .toString()
+                                          .toUpperCase()),
+                                    )
+                                  ),
+                                  title: Text(document['shopper_name']),
+                                  subtitle: Text(document['appointment_status']),
+                                  trailing: IconButton(
+                                    padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                                    icon: Icon(Icons.check),
+                                    onPressed: () {
+                                      print("Open");
+                                      _showCompleteDialog(context, document.documentID,
+                                          document['otp']);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                      )
+                  );
+                }
             }
           },
         ));
@@ -586,7 +680,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget buildPendingShop() {
     return Container(
-        padding: const EdgeInsets.all(10.0),
         child: StreamBuilder<QuerySnapshot>(
           stream: Firestore.instance
               .collection('appointments')
@@ -598,234 +691,254 @@ class _MyHomePageState extends State<MyHomePage> {
             if (snapshot.hasError) return new Text('Error: ${snapshot.error}');
             switch (snapshot.connectionState) {
               case ConnectionState.waiting:
-                return new Text('Loading...');
+                return new Center(
+                  child: CircularProgressIndicator(
+                    backgroundColor: Theme.of(context).accentColor,
+                  ),
+                );
               default:
-                return new ListView(
-                  children:
-                      snapshot.data.documents.map((DocumentSnapshot document) {
-                    return Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: new ListTile(
-                          onTap: () {
-                            var startTime;
-                            var endTime;
-                            showModalBottomSheet(
-                                context: context,
-                                builder: (context) => StatefulBuilder(
-                                      builder: (BuildContext context,
+                List<DocumentSnapshot> documents = new List();
+                documents = (snapshot.data.documents);
+                if(documents.length<1) {
+                  return Center(
+                    child: Text(
+                        "You have no appointment requests."
+                    ),
+                  );
+                }
+                else {
+                  return new Container(
+                      child: ListView.builder(
+                          itemCount: documents.length,
+                          itemBuilder: (BuildContext ctxt, int index) {
+                            DocumentSnapshot document = documents[index];
+                            return Card(
+                              margin: EdgeInsets.all(10.0),
+                              elevation: 2,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: new ListTile(
+                                  contentPadding: EdgeInsets.all(8),
+                                  onTap: () {
+                                    var startTime;
+                                    var endTime;
+                                    showModalBottomSheet(
+                                        context: context,
+                                        builder: (context) => StatefulBuilder(
+                                          builder: (BuildContext context,
                                               StateSetter setStateSheet) =>
-                                          SingleChildScrollView(
-                                        child: Container(
-                                            color: Colors.grey[900],
-                                            height: MediaQuery.of(context)
-                                                    .size
-                                                    .height *
-                                                0.5,
-                                            child: Column(
-                                              children: <Widget>[
-                                                Align(
-                                                  alignment: Alignment.center,
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: <Widget>[
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(16.0),
-                                                        child: Icon(Icons.info),
-                                                      ),
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(16.0),
-                                                        child: Text(
-                                                            'Fix an appointment',
-                                                            style: TextStyle(
-                                                                fontSize:
-                                                                    16.0)),
-                                                      ),
-                                                      InkWell(
-                                                        onTap: () {
-                                                          Navigator.pop(
-                                                              context);
-                                                        },
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(16.0),
-                                                          child: Icon(
-                                                            Icons.close,
+                                              SingleChildScrollView(
+                                                child: Container(
+                                                    color: Colors.grey[900],
+                                                    height: MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                        0.5,
+                                                    child: Column(
+                                                      children: <Widget>[
+                                                        Align(
+                                                          alignment: Alignment.center,
+                                                          child: Row(
+                                                            mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
+                                                            children: <Widget>[
+                                                              Padding(
+                                                                padding:
+                                                                const EdgeInsets
+                                                                    .all(16.0),
+                                                                child: Icon(Icons.info),
+                                                              ),
+                                                              Padding(
+                                                                padding:
+                                                                const EdgeInsets
+                                                                    .all(16.0),
+                                                                child: Text(
+                                                                    'Fix an appointment',
+                                                                    style: TextStyle(
+                                                                        fontSize:
+                                                                        16.0)),
+                                                              ),
+                                                              InkWell(
+                                                                onTap: () {
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                },
+                                                                child: Padding(
+                                                                  padding:
+                                                                  const EdgeInsets
+                                                                      .all(16.0),
+                                                                  child: Icon(
+                                                                    Icons.close,
+                                                                  ),
+                                                                ),
+                                                              )
+                                                            ],
                                                           ),
                                                         ),
-                                                      )
-                                                    ],
-                                                  ),
-                                                ),
-                                                Divider(
-                                                  color: Colors.black26,
-                                                ),
-                                                SizedBox(
-                                                    height: 300,
-                                                    child: Container(
-                                                        child: Column(
-                                                      children: <Widget>[
-                                                        Flexible(
-                                                          child: Padding(
-                                                              padding:
-                                                                  EdgeInsets
-                                                                      .fromLTRB(
-                                                                          16.0,
-                                                                          8.0,
-                                                                          16.0,
-                                                                          0),
-                                                              child: Column(
-                                                                children: <
-                                                                    Widget>[
-                                                                  Card(
-                                                                      child:
-                                                                          Padding(
-                                                                    padding:
-                                                                        const EdgeInsets.all(
-                                                                            0.0),
-                                                                    child:
-                                                                        ListTile(
-                                                                      title: Text(
-                                                                          "User needs : "),
-                                                                      subtitle:
-                                                                          Text(
-                                                                        document[
-                                                                            'items'],
-                                                                        overflow:
-                                                                            TextOverflow.ellipsis,
-                                                                        maxLines:
-                                                                            5,
-                                                                      ),
-                                                                    ),
-                                                                  )),
-                                                                  InkWell(
-                                                                      onTap:
-                                                                          () {
-                                                                        DatePicker.showTime12hPicker(
-                                                                            context,
-                                                                            theme: DatePickerTheme(
-                                                                                backgroundColor: Colors.grey[900],
-                                                                                itemStyle: TextStyle(color: Colors.white),
-                                                                                cancelStyle: TextStyle(color: Colors.white)),
-                                                                            showTitleActions: true, onChanged: (date) {
-                                                                          print('change $date in time zone ' +
-                                                                              date.timeZoneOffset.inHours.toString());
-                                                                        }, onConfirm: (date) {
-                                                                          startTime =
-                                                                              date;
-                                                                          setStateSheet(
-                                                                              () {
-                                                                            startTimeController.text =
-                                                                                startTime.toString();
-                                                                          });
-                                                                        }, currentTime: DateTime.now());
-                                                                      },
-                                                                      child: PhoneAuthWidgets
-                                                                          .textFieldDisabled(
-                                                                              startTimeController)),
-                                                                  InkWell(
-                                                                      onTap:
-                                                                          () {
-                                                                        DatePicker.showTime12hPicker(
-                                                                            context,
-                                                                            theme: DatePickerTheme(
-                                                                                backgroundColor: Colors.grey[900],
-                                                                                itemStyle: TextStyle(color: Colors.white),
-                                                                                cancelStyle: TextStyle(color: Colors.white)),
-                                                                            showTitleActions: true, onChanged: (date) {
-                                                                          print('change $date in time zone ' +
-                                                                              date.timeZoneOffset.inHours.toString());
-                                                                        }, onConfirm: (date) {
-                                                                          endTime =
-                                                                              date;
-                                                                          setStateSheet(
-                                                                              () {
-                                                                            endTimeController.text =
-                                                                                endTime.toString();
-                                                                          });
-                                                                        }, currentTime: DateTime.now());
-                                                                      },
-                                                                      child: PhoneAuthWidgets
-                                                                          .textFieldDisabled(
-                                                                              endTimeController)),
-                                                                  Center(
-                                                                    child:
-                                                                        RaisedButton(
-                                                                      color: Colors
-                                                                          .cyan,
-                                                                      child: Text(
-                                                                          "Confirm"),
-                                                                      onPressed:
-                                                                          () {
-                                                                        Firestore
-                                                                            .instance
-                                                                            .collection('appointments')
-                                                                            .document(document.documentID)
-                                                                            .updateData({
-                                                                          'appointment_start':
-                                                                              startTime,
-                                                                          'appointment_end':
-                                                                              endTime,
-                                                                          'appointment_status':
-                                                                              'scheduled'
-                                                                        }).then((value) async {
-                                                                          await Firestore.instance.collection('appointments')
-                                                                              .document(document.documentID).get().then((doc) async{
-                                                                            var title = "Apopintment scheduled";
-                                                                            var body = "Your appointment at " + doc['shop_name'] + " is scheduled";
-                                                                            await Firestore.instance.collection('notifications')
-                                                                                .add({'sender_type': "shops",
-                                                                              'receiver_uid': doc['shopper_uid'],
-                                                                              'title': title,
-                                                                              'body': body,
-                                                                            });
-                                                                          });
-                                                                        });
-                                                                        Navigator.pop(
-                                                                            context);
-                                                                      },
-                                                                    ),
-                                                                  )
-                                                                ],
-                                                              )),
+                                                        Divider(
+                                                          color: Colors.black26,
                                                         ),
+                                                        SizedBox(
+                                                            height: 300,
+                                                            child: Container(
+                                                                child: Column(
+                                                                  children: <Widget>[
+                                                                    Flexible(
+                                                                      child: Padding(
+                                                                          padding:
+                                                                          EdgeInsets
+                                                                              .fromLTRB(
+                                                                              16.0,
+                                                                              8.0,
+                                                                              16.0,
+                                                                              0),
+                                                                          child: Column(
+                                                                            children: <
+                                                                                Widget>[
+                                                                              Card(
+                                                                                  child:
+                                                                                  Padding(
+                                                                                    padding:
+                                                                                    const EdgeInsets.all(
+                                                                                        0.0),
+                                                                                    child:
+                                                                                    ListTile(
+                                                                                      title: Text(
+                                                                                          "User needs : "),
+                                                                                      subtitle:
+                                                                                      Text(
+                                                                                        document[
+                                                                                        'items'],
+                                                                                        overflow:
+                                                                                        TextOverflow.ellipsis,
+                                                                                        maxLines:
+                                                                                        5,
+                                                                                      ),
+                                                                                    ),
+                                                                                  )),
+                                                                              InkWell(
+                                                                                  onTap:
+                                                                                      () {
+                                                                                    DatePicker.showTime12hPicker(
+                                                                                        context,
+                                                                                        theme: DatePickerTheme(
+                                                                                            backgroundColor: Colors.grey[900],
+                                                                                            itemStyle: TextStyle(color: Colors.white),
+                                                                                            cancelStyle: TextStyle(color: Colors.white)),
+                                                                                        showTitleActions: true, onChanged: (date) {
+                                                                                      print('change $date in time zone ' +
+                                                                                          date.timeZoneOffset.inHours.toString());
+                                                                                    }, onConfirm: (date) {
+                                                                                      startTime =
+                                                                                          date;
+                                                                                      setStateSheet(
+                                                                                              () {
+                                                                                            startTimeController.text =
+                                                                                                startTime.toString();
+                                                                                          });
+                                                                                    }, currentTime: DateTime.now());
+                                                                                  },
+                                                                                  child: PhoneAuthWidgets
+                                                                                      .textFieldDisabled(
+                                                                                      startTimeController)),
+                                                                              InkWell(
+                                                                                  onTap:
+                                                                                      () {
+                                                                                    DatePicker.showTime12hPicker(
+                                                                                        context,
+                                                                                        theme: DatePickerTheme(
+                                                                                            backgroundColor: Colors.grey[900],
+                                                                                            itemStyle: TextStyle(color: Colors.white),
+                                                                                            cancelStyle: TextStyle(color: Colors.white)),
+                                                                                        showTitleActions: true, onChanged: (date) {
+                                                                                      print('change $date in time zone ' +
+                                                                                          date.timeZoneOffset.inHours.toString());
+                                                                                    }, onConfirm: (date) {
+                                                                                      endTime =
+                                                                                          date;
+                                                                                      setStateSheet(
+                                                                                              () {
+                                                                                            endTimeController.text =
+                                                                                                endTime.toString();
+                                                                                          });
+                                                                                    }, currentTime: DateTime.now());
+                                                                                  },
+                                                                                  child: PhoneAuthWidgets
+                                                                                      .textFieldDisabled(
+                                                                                      endTimeController)),
+                                                                              Center(
+                                                                                child:
+                                                                                RaisedButton(
+                                                                                  color: Colors
+                                                                                      .cyan,
+                                                                                  child: Text(
+                                                                                      "Confirm"),
+                                                                                  onPressed:
+                                                                                      () {
+                                                                                    Firestore
+                                                                                        .instance
+                                                                                        .collection('appointments')
+                                                                                        .document(document.documentID)
+                                                                                        .updateData({
+                                                                                      'appointment_start':
+                                                                                      startTime,
+                                                                                      'appointment_end':
+                                                                                      endTime,
+                                                                                      'appointment_status':
+                                                                                      'scheduled'
+                                                                                    }).then((value) async {
+                                                                                      await Firestore.instance.collection('appointments')
+                                                                                          .document(document.documentID).get().then((doc) async{
+                                                                                        var title = "Apopintment scheduled";
+                                                                                        var body = "Your appointment at " + doc['shop_name'] + " is scheduled";
+                                                                                        await Firestore.instance.collection('notifications')
+                                                                                            .add({'sender_type': "shops",
+                                                                                          'receiver_uid': doc['shopper_uid'],
+                                                                                          'title': title,
+                                                                                          'body': body,
+                                                                                        });
+                                                                                      });
+                                                                                    });
+                                                                                    Navigator.pop(
+                                                                                        context);
+                                                                                  },
+                                                                                ),
+                                                                              )
+                                                                            ],
+                                                                          )),
+                                                                    ),
+                                                                  ],
+                                                                )))
                                                       ],
-                                                    )))
-                                              ],
-                                            )),
-                                      ),
-                                    ));
-                          },
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.cyan,
-                            child: Text(document['shopper_name'][0]
-                                .toString()
-                                .toUpperCase()),
-                          ),
-                          title: Text(document['shopper_name']),
-                          subtitle: Text("Tap to view more"),
-                          trailing: IconButton(
-                            icon: Icon(Icons.info),
-                            onPressed: () {
-                              print("Open");
-                              List<double> pt =
-                                  gH.decode(document['shop_geohash']);
-                              MapUtils.openMap(pt[1], pt[0]);
-                            },
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                );
+                                                    )),
+                                              ),
+                                        ));
+                                  },
+                                  leading: CircleAvatar(
+                                    backgroundColor: Theme.of(context).accentColor,
+                                    child: Text(document['shopper_name'][0]
+                                        .toString()
+                                        .toUpperCase()),
+                                  ),
+                                  title: Text(document['shopper_name']),
+                                  subtitle: Text("Tap to view more"),
+                                  trailing: IconButton(
+                                    icon: Icon(Icons.info),
+                                    onPressed: () {
+                                      print("Open");
+                                      List<double> pt =
+                                      gH.decode(document['shop_geohash']);
+                                      MapUtils.openMap(pt[1], pt[0]);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                      )
+                  );
+                }
             }
           },
         ));
@@ -833,7 +946,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget buildCompletedShop() {
     return Container(
-        padding: const EdgeInsets.all(10.0),
         child: StreamBuilder<QuerySnapshot>(
           stream: Firestore.instance
               .collection('appointments')
@@ -845,91 +957,244 @@ class _MyHomePageState extends State<MyHomePage> {
             if (snapshot.hasError) return new Text('Error: ${snapshot.error}');
             switch (snapshot.connectionState) {
               case ConnectionState.waiting:
-                return new Text('Loading...');
-              default:
-                return new ListView(
-                  children:
-                      snapshot.data.documents.map((DocumentSnapshot document) {
-                    return Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: new ListTile(
-                          onTap: () {
-                            //Navigator.push(context, MaterialPageRoute(builder: (context)=> ShopPage(shopDetails: document, userDetails: userData,)));
-                            _showModalAppointmentDetails(document);
-                          },
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.cyan,
-                            child: Text(document['shopper_name'][0]
-                                .toString()
-                                .toUpperCase()),
-                          ),
-                          title: Text(document['shopper_name']),
-                          subtitle: Text(document['appointment_status']),
-                          trailing: IconButton(
-                            icon: Icon(Icons.info),
-                            onPressed: () {
-                              print("Open");
-                              _showModalAppointmentDetails(document);
-                            },
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                return new Center(
+                  child: CircularProgressIndicator(
+                    backgroundColor: Theme.of(context).accentColor,
+                  ),
                 );
+              default:
+                List<DocumentSnapshot> documents = new List();
+                documents = (snapshot.data.documents);
+                if(documents.length<1) {
+                  return Center(
+                    child: Text(
+                        "You have never accepted an appointment."
+                    ),
+                  );
+                }
+                else {
+                  return new Container(
+                      child: ListView.builder(
+                          itemCount: documents.length,
+                          itemBuilder: (BuildContext ctxt, int index) {
+                            DocumentSnapshot document = documents[index];
+                            return Card(
+                              margin: EdgeInsets.all(10.0),
+                              elevation: 2,
+                              child: Container(
+                                child: new ListTile(
+                                  contentPadding: EdgeInsets.all(8),
+                                  onTap: () {
+                                    //Navigator.push(context, MaterialPageRoute(builder: (context)=> ShopPage(shopDetails: document, userDetails: userData,)));
+                                    _showModalAppointmentDetails(document);
+                                  },
+                                  leading: Container(
+                                    padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                                    child: CircleAvatar(
+                                      backgroundColor: Theme.of(context).accentColor,
+                                      child: Text(document['shopper_name'][0]
+                                          .toString()
+                                          .toUpperCase()),
+                                    ),
+                                  ),
+                                  title: Text(document['shopper_name']),
+                                  subtitle: Text(document['appointment_status']),
+                                  trailing: IconButton(
+                                    padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                                    icon: Icon(Icons.info),
+                                    onPressed: () {
+                                      print("Open");
+                                      _showModalAppointmentDetails(document);
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                      )
+                  );
+                }
             }
           },
         ));
   }
 
+
+  _showModalEditUserData(String dataType, String oldData) async {
+    _dataController.text = oldData;
+    String newData = "";
+    String result = await showDialog(
+        context: context,
+        builder: (context) => StatefulBuilder(
+          builder: (BuildContext context, StateSetter setStateSheet) =>
+              AlertDialog(
+                title: Text(
+                    'Change your $dataType'),
+                content: TextField(
+                  controller: _dataController,
+                  cursorColor: Theme.of(context).accentColor,
+                ),
+                actions: <Widget>[
+                  FlatButton(
+                    child: Text(
+                      'Save',
+                      style:
+                      TextStyle(
+                        color: Theme.of(context).accentColor),
+                    ),
+                    onPressed: () async {
+                      if(_dataController.text!=oldData){
+                        // Data changed
+                        newData = _dataController.text;
+                      }
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                  FlatButton(
+                    child: Text(
+                      'Cancel',
+                      style:
+                      TextStyle(
+                          color: Theme.of(context).accentColor),
+                    ),
+                    onPressed: () async {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              )
+        ));
+    return newData;
+  }
+
   Widget buildUserProfile() {
     return Container(
-        padding: const EdgeInsets.all(10.0),
-        child: StreamBuilder<QuerySnapshot>(
-          stream: Firestore.instance
+        child: FutureBuilder<DocumentSnapshot>(
+          future: Firestore.instance
               .collection('users')
-              .where('target_shop', isEqualTo: userData['uid'])
-              .snapshots(),
+              .document(userData['uid'])
+            .get(),
           builder:
-              (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
             if (snapshot.hasError) return new Text('Error: ${snapshot.error}');
             switch (snapshot.connectionState) {
               case ConnectionState.waiting:
-                return new Text('Loading...');
+                return new Center(
+                  child: CircularProgressIndicator(
+                    backgroundColor: Theme.of(context).accentColor,
+                  ),
+                );
               default:
+                DocumentSnapshot document = snapshot.data;
                 return new ListView(
-                  children:
-                      snapshot.data.documents.map((DocumentSnapshot document) {
-                    return Card(
+                  children: [
+                    Card(
+                      margin: EdgeInsets.all(10.0),
                       elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                      child: Container(
                         child: new ListTile(
-                          onTap: () {
-                            //Navigator.push(context, MaterialPageRoute(builder: (context)=> ShopPage(shopDetails: document, userDetails: userData,)));
-                            _showModalAppointmentDetails(document);
+                          contentPadding: EdgeInsets.all(8),
+                          onTap: () async {
+                            var newData = await _showModalEditUserData("Name", document['name']);
+                            if(newData!="") {
+                              Firestore.instance.collection('users').document(userData['uid']).updateData({'name':newData});
+                              setState(() {});
+                            }
                           },
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.cyan,
-                            child: Text(document['shopper_name'][0]
-                                .toString()
-                                .toUpperCase()),
+                          leading: Container(
+                            padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                            child: CircleAvatar(
+                              backgroundColor: Theme.of(context).accentColor,
+                              child: Text("N"
+                                  .toString()
+                                  .toUpperCase()),
+                            ),
                           ),
-                          title: Text(document['shopper_name']),
-                          subtitle: Text(document['appointment_status']),
+                          title: Text("Name"),
+                          subtitle: Text(snapshot.data['name']),
                           trailing: IconButton(
-                            icon: Icon(Icons.info),
-                            onPressed: () {
-                              print("Open");
-                              _showModalAppointmentDetails(document);
+                            padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                            icon: Icon(Icons.edit),
+                            onPressed: () async {
+                              var newData = await _showModalEditUserData("Name", document['name']);
+                              if(newData!="") {
+                                Firestore.instance.collection('users').document(userData['uid']).updateData({'name':newData});
+                                setState(() {});
+                              }
                             },
                           ),
                         ),
                       ),
-                    );
-                  }).toList(),
+                    ),
+
+                    Card(
+                      margin: EdgeInsets.all(10.0),
+                      elevation: 2,
+                      child: Container(
+                        child: new ListTile(
+                          contentPadding: EdgeInsets.all(8),
+                          onTap: () async {
+                          },
+                          leading: Container(
+                            padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                            child: CircleAvatar(
+                              backgroundColor: Theme.of(context).accentColor,
+                              child: Text("P"
+                                  .toString()
+                                  .toUpperCase()),
+                            ),
+                          ),
+                          title: Text("Phone Number"),
+                          subtitle: Text(snapshot.data['phone_number']),
+                          trailing: IconButton(
+                            padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                            icon: Icon(Icons.edit),
+                            onPressed: () async {
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    Card(
+                      margin: EdgeInsets.all(10.0),
+                      elevation: 2,
+                      child: Container(
+                        child: new ListTile(
+                          contentPadding: EdgeInsets.all(8),
+                          onTap: () async {
+                            var newData = await _showModalEditUserData("Address", document['address']);
+                            if(newData!="") {
+                              Firestore.instance.collection('users').document(userData['uid']).updateData({'address':newData});
+                              setState(() {});
+                            }
+                          },
+                          leading: Container(
+                            padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                            child: CircleAvatar(
+                              backgroundColor: Theme.of(context).accentColor,
+                              child: Text("A"
+                                  .toString()
+                                  .toUpperCase()),
+                            ),
+                          ),
+                          title: Text("Your Address"),
+                          subtitle: Text(snapshot.data['address']),
+                          trailing: IconButton(
+                            padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                            icon: Icon(Icons.edit),
+                            onPressed: () async {
+                              var newData = await _showModalEditUserData("Address", document['address']);
+                              if(newData!="") {
+                                Firestore.instance.collection('users').document(userData['uid']).updateData({'address':newData});
+                                setState(() {});
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ]
                 );
             }
           },
@@ -937,7 +1202,254 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget buildShopProfile() {
-    return Container();
+    return Container(
+        child: FutureBuilder<DocumentSnapshot>(
+          future: Firestore.instance
+              .collection('shops')
+              .document(userData['uid'])
+              .get(),
+          builder:
+              (BuildContext context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+            if (snapshot.hasError) return new Text('Error: ${snapshot.error}');
+            switch (snapshot.connectionState) {
+              case ConnectionState.waiting:
+                return new Center(
+                  child: CircularProgressIndicator(
+                    backgroundColor: Theme.of(context).accentColor,
+                  ),
+                );
+              default:
+                DocumentSnapshot document = snapshot.data;
+                return new ListView(
+                    children: [
+                      Card(
+                        margin: EdgeInsets.all(10.0),
+                        elevation: 2,
+                        child: Container(
+                          child: new ListTile(
+                            contentPadding: EdgeInsets.all(8),
+                            onTap: () async {
+                              var newData = await _showModalEditUserData("Shop Name", document['shop_name']);
+                              if(newData!="") {
+                                Firestore.instance.collection('shops').document(userData['uid']).updateData({'shop_name':newData});
+                                setState(() {});
+                              }
+                            },
+                            leading: Container(
+                              padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                              child: CircleAvatar(
+                                backgroundColor: Theme.of(context).accentColor,
+                                child: Text("N"
+                                    .toString()
+                                    .toUpperCase()),
+                              ),
+                            ),
+                            title: Text("Shop Name"),
+                            subtitle: Text(snapshot.data['shop_name']),
+                            trailing: IconButton(
+                              padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                              icon: Icon(Icons.edit),
+                              onPressed: () async {
+                                var newData = await _showModalEditUserData("Shop Name", document['shop_name']);
+                                if(newData!="") {
+                                  Firestore.instance.collection('shops').document(userData['uid']).updateData({'shop_name':newData});
+                                  setState(() {});
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      Card(
+                        margin: EdgeInsets.all(10.0),
+                        elevation: 2,
+                        child: Container(
+                          child: new ListTile(
+                            contentPadding: EdgeInsets.all(8),
+                            onTap: () async {
+                              var newData = await _showModalEditUserData("Your Name", document['shop_contact_name']);
+                              if(newData!="") {
+                                Firestore.instance.collection('shops').document(userData['uid']).updateData({'shop_contact_name':newData});
+                                setState(() {});
+                              }
+                            },
+                            leading: Container(
+                              padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                              child: CircleAvatar(
+                                backgroundColor: Theme.of(context).accentColor,
+                                child: Text("N"
+                                    .toString()
+                                    .toUpperCase()),
+                              ),
+                            ),
+                            title: Text("Your Name"),
+                            subtitle: Text(snapshot.data['shop_contact_name']),
+                            trailing: IconButton(
+                              padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                              icon: Icon(Icons.edit),
+                              onPressed: () async {
+                                var newData = await _showModalEditUserData("Your Name", document['shop_contact_name']);
+                                if(newData!="") {
+                                  Firestore.instance.collection('shops').document(userData['uid']).updateData({'shop_contact_name':newData});
+                                  setState(() {});
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      Card(
+                        margin: EdgeInsets.all(10.0),
+                        elevation: 2,
+                        child: Container(
+                          child: new ListTile(
+                            contentPadding: EdgeInsets.all(8),
+                            onTap: () async {
+                            },
+                            leading: Container(
+                              padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                              child: CircleAvatar(
+                                backgroundColor: Theme.of(context).accentColor,
+                                child: Text("P"
+                                    .toString()
+                                    .toUpperCase()),
+                              ),
+                            ),
+                            title: Text("Phone Number"),
+                            subtitle: Text(snapshot.data['phone_number']),
+                            trailing: IconButton(
+                              padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                              icon: Icon(Icons.edit),
+                              onPressed: () async {
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      Card(
+                        margin: EdgeInsets.all(10.0),
+                        elevation: 2,
+                        child: Container(
+                          child: new ListTile(
+                            contentPadding: EdgeInsets.all(8),
+                            onTap: () async {
+                              var newData = await _showModalEditUserData("Shop Address", document['shop_address']);
+                              if(newData!="") {
+                                Firestore.instance.collection('shops').document(userData['uid']).updateData({'shop_address':newData});
+                                setState(() {});
+                              }
+                            },
+                            leading: Container(
+                              padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                              child: CircleAvatar(
+                                backgroundColor: Theme.of(context).accentColor,
+                                child: Text("A"
+                                    .toString()
+                                    .toUpperCase()),
+                              ),
+                            ),
+                            title: Text("Your Address"),
+                            subtitle: Text(snapshot.data['shop_address']),
+                            trailing: IconButton(
+                              padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                              icon: Icon(Icons.edit),
+                              onPressed: () async {
+                                var newData = await _showModalEditUserData("Shop Address", document['shop_address']);
+                                if(newData!="") {
+                                  Firestore.instance.collection('shops').document(userData['uid']).updateData({'shop_address':newData});
+                                  setState(() {});
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      Card(
+                        margin: EdgeInsets.all(10.0),
+                        elevation: 2,
+                        child: Container(
+                          child: new ListTile(
+                            contentPadding: EdgeInsets.all(8),
+                            onTap: () async {
+                              var newData = await _showModalEditUserData("Shop GST", document['shop_GST']);
+                              if(newData!="") {
+                                Firestore.instance.collection('shops').document(userData['uid']).updateData({'shop_GST':newData});
+                                setState(() {});
+                              }
+                            },
+                            leading: Container(
+                              padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                              child: CircleAvatar(
+                                backgroundColor: Theme.of(context).accentColor,
+                                child: Text("G"
+                                    .toString()
+                                    .toUpperCase()),
+                              ),
+                            ),
+                            title: Text("Shop GST"),
+                            subtitle: Text(snapshot.data['shop_GST']!=""?snapshot.data['shop_GST']:"Not Entered"),
+                            trailing: IconButton(
+                              padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                              icon: Icon(Icons.edit),
+                              onPressed: () async {
+                                var newData = await _showModalEditUserData("Shop GST", document['shop_GST']);
+                                if(newData!="") {
+                                  Firestore.instance.collection('shops').document(userData['uid']).updateData({'shop_GST':newData});
+                                  setState(() {});
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      Card(
+                        margin: EdgeInsets.all(10.0),
+                        elevation: 2,
+                        child: Container(
+                          child: new ListTile(
+                            contentPadding: EdgeInsets.all(8),
+                            onTap: () async {
+                              var newData = await _showModalEditUserData("Limit", document['limit'].toString());
+                              if(newData!="") {
+                                Firestore.instance.collection('shops').document(userData['uid']).updateData({'limit':int.parse(newData)});
+                                setState(() {});
+                              }
+                            },
+                            leading: Container(
+                              padding: EdgeInsets.fromLTRB(10, 0, 0, 0),
+                              child: CircleAvatar(
+                                backgroundColor: Theme.of(context).accentColor,
+                                child: Text("L"
+                                    .toString()
+                                    .toUpperCase()),
+                              ),
+                            ),
+                            title: Text("Your Limit"),
+                            subtitle: Text(snapshot.data['limit'].toString()),
+                            trailing: IconButton(
+                              padding: EdgeInsets.fromLTRB(0, 0, 10, 0),
+                              icon: Icon(Icons.edit),
+                              onPressed: () async {
+                                var newData = await _showModalEditUserData("Limit", document['limit'].toString());
+                                if(newData!="") {
+                                  Firestore.instance.collection('shops').document(userData['uid']).updateData({'limit':int.parse(newData)});
+                                  setState(() {});
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ]
+                );
+            }
+          },
+        ));
   }
 
   Widget buildBody() {
@@ -1048,7 +1560,6 @@ class _MyHomePageState extends State<MyHomePage> {
           setState(() {
             currentPage = position;
             currentTitle = title;
-            currentColor = color;
           });
         },
       ),

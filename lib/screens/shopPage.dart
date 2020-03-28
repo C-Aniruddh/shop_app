@@ -5,15 +5,14 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_firebase/utils/widgets.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_firebase/screens/homePage.dart';
 
 class ShopPage extends StatefulWidget {
   ShopPage({Key key, this.shopDetails, this.userDetails}) : super(key: key);
 
-  DocumentSnapshot shopDetails;
-  DocumentSnapshot userDetails;
+  final DocumentSnapshot shopDetails;
+  final DocumentSnapshot userDetails;
 
   @override
   _ShopPageState createState() => _ShopPageState();
@@ -55,7 +54,7 @@ class _ShopPageState extends State<ShopPage> {
   }
 
   void setup() async {
-    await setupMap();
+    setupMap();
     setState(() {
       mapLoaded = true;
     });
@@ -94,76 +93,84 @@ class _ShopPageState extends State<ShopPage> {
   _showDialog() async {
     await showDialog<String>(
       context: context,
-      child: AlertDialog(
-        contentPadding: const EdgeInsets.all(16.0),
-        content: Column(mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-          Text("Request an appointment"),
-          TextFormField(
-            maxLines: 5,
-            autofocus: true,
-            decoration: InputDecoration(labelText: 'What do you want to buy?'),
-            keyboardType: TextInputType.multiline,
-            controller: _textEditingController,
-          ),
-        ]),
-        actions: <Widget>[
-          FlatButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.pop(context);
-              }),
-          FlatButton(
-              child: Text('Request Appointment'),
-              onPressed: () async{
-                var rng = new Random();
-                var now = new DateTime.now();
-                await Firestore.instance.collection('appointments')
-                    .add({'timestamp': now,
-                  'items': _textEditingController.text,
-                  'target_shop': widget.shopDetails['uid'],
-                  'shopper_uid': widget.userDetails['uid'],
-                  'shopper_name': widget.userDetails['name'],
-                  'shop_name': widget.shopDetails['shop_name'],
-                  'shop_geohash': widget.shopDetails['shop_geohash'],
-                  'appointment_status': 'pending',
-                  'appointment_start': null,
-                  'appointment_end': null,
-                  'otp': (rng.nextInt(10000) + 1000).toString()
-                }).then((value) async{
-                  String title = "New appointment request";
-                  String body = widget.userDetails['name'] + " has requested an appointment.";
-                  await Firestore.instance.collection('notifications')
-                      .add({'sender_type': "users",
-                    'receiver_uid': widget.shopDetails['uid'],
-                    'title': title,
-                    'body': body,
+      builder: (ctxt){
+        return AlertDialog(
+          contentPadding: const EdgeInsets.all(16.0),
+          content: Column(mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text("Request an appointment"),
+                TextFormField(
+                  maxLines: 5,
+                  autofocus: true,
+                  decoration: InputDecoration(labelText: 'What do you want to buy?'),
+                  keyboardType: TextInputType.multiline,
+                  controller: _textEditingController,
+                ),
+              ]),
+          actions: <Widget>[
+            FlatButton(
+                child: Text('Cancel'),
+                onPressed: () {
+                  Navigator.pop(context);
+                }),
+            FlatButton(
+                child: Text('Request Appointment'),
+                onPressed: () async{
+                  var rng = new Random();
+                  var now = new DateTime.now();
+                  await Firestore.instance.collection('appointments')
+                      .add({'timestamp': now,
+                    'items': _textEditingController.text,
+                    'target_shop': widget.shopDetails['uid'],
+                    'shopper_uid': widget.userDetails['uid'],
+                    'shopper_name': widget.userDetails['name'],
+                    'shop_name': widget.shopDetails['shop_name'],
+                    'shop_geohash': widget.shopDetails['shop_geohash'],
+                    'appointment_status': 'pending',
+                    'appointment_start': null,
+                    'appointment_end': null,
+                    'otp': (rng.nextInt(10000) + 1000).toString()
+                  }).then((value) async{
+                    String title = "New appointment request";
+                    String body = widget.userDetails['name'] + " has requested an appointment.";
+                    await Firestore.instance.collection('notifications')
+                        .add({'sender_type': "users",
+                      'receiver_uid': widget.shopDetails['uid'],
+                      'title': title,
+                      'body': body,
+                    });
                   });
-                });
-                Navigator.pop(context);
-                _showInformationDialog(context, "Your appointment was successfully requested");
-              })
-        ],
-      ),
+                  Navigator.pop(context);
+                  _showInformationDialog(context, "Your appointment was successfully requested");
+                })
+          ],
+        );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    var _fixedPadding = MediaQuery.of(context).size.height * 0.025;
     return Scaffold(
       resizeToAvoidBottomPadding: false,
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(widget.shopDetails['shop_name']),
       ),
-      body: Column(
-        children: <Widget>[
-          SizedBox(
-              height: MediaQuery.of(context).size.height * 0.50,
-              width: MediaQuery.of(context).size.width,
-              child: mapLoaded
-                  ? GoogleMap(
+      body: Container(
+        constraints: BoxConstraints.expand(),
+        child: Column(
+          children: <Widget>[
+            Expanded(
+              child: Container(
+                alignment: Alignment.topCenter,
+                constraints: BoxConstraints.expand(),
+                child:
+                SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.50,
+                    width: MediaQuery.of(context).size.width,
+                    child: mapLoaded
+                        ? GoogleMap(
                       mapType: MapType.normal,
                       initialCameraPosition: _kGooglePlex,
                       markers: Set<Marker>.of(markers.values),
@@ -171,88 +178,104 @@ class _ShopPageState extends State<ShopPage> {
                         _controller.complete(controller);
                       },
                     )
-                  : Container()),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: SizedBox(
-                width: MediaQuery.of(context).size.width,
-                child: Container(
-                    child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    Card(
-                      elevation: 2,
-                      child: Padding(
+                        : Container()),
+              ),
+            ),
+            Expanded(
+              child: Container(
+                alignment: Alignment.bottomCenter,
+                constraints: BoxConstraints.expand(),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: <Widget>[
+                      Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: ListTile(
-                          title: Text("Address"),
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.cyan,
-                            child: Text("A"),
-                          ),
-                          subtitle: Text(widget.shopDetails['shop_address']),
-                          trailing: IconButton(
-                            icon: Icon(Icons.map),
-                            onPressed: () {
-                              print("Open");
-                              MapUtils.openMap(widget.shopDetails['shop_lat'],
-                                  widget.shopDetails['shop_lon']);
-                            },
-                          ),
-                        ),
+                        child: SizedBox(
+                            width: MediaQuery.of(context).size.width,
+                            child: Container(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    Card(
+                                      elevation: 2,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: ListTile(
+                                          title: Text("Address"),
+                                          leading: CircleAvatar(
+                                            backgroundColor: Theme.of(context).accentColor,
+                                            child: Text("A"),
+                                          ),
+                                          subtitle: Text(widget.shopDetails['shop_address']),
+                                          trailing: IconButton(
+                                            icon: Icon(Icons.map),
+                                            onPressed: () {
+                                              print("Open");
+                                              MapUtils.openMap(widget.shopDetails['shop_lat'],
+                                                  widget.shopDetails['shop_lon']);
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Card(
+                                      elevation: 2,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: ListTile(
+                                          title: Text("Contact Owner"),
+                                          leading: CircleAvatar(
+                                            backgroundColor: Theme.of(context).accentColor,
+                                            child: Text("C"),
+                                          ),
+                                          subtitle: Text(
+                                              widget.shopDetails['shop_contact_name'] +
+                                                  " (" +
+                                                  widget.shopDetails['phone_number'] +
+                                                  ")"),
+                                          trailing: IconButton(
+                                            icon: Icon(Icons.call),
+                                            onPressed: () {
+                                              print("Open");
+                                              // MapUtils.openMap(widget.shopDetails['shop_lat'], widget.shopDetails['shop_lon']);
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Card(
+                                      elevation: 2,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: ListTile(
+                                          title: Text("User Limit (Every 10 minutes)"),
+                                          leading: CircleAvatar(
+                                            backgroundColor: Theme.of(context).accentColor,
+                                            child: Text("L"),
+                                          ),
+                                          subtitle:
+                                          Text(widget.shopDetails['limit'].toString()),
+                                          trailing: IconButton(
+                                            icon: Icon(Icons.info),
+                                            onPressed: () {
+                                              print("Open");
+                                              // MapUtils.openMap(widget.shopDetails['shop_lat'], widget.shopDetails['shop_lon']);
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+
+                                  ],
+                                ))),
                       ),
-                    ),
-                    Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ListTile(
-                          title: Text("Contact Owner"),
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.cyan,
-                            child: Text("C"),
-                          ),
-                          subtitle: Text(
-                              widget.shopDetails['shop_contact_name'] +
-                                  " (" +
-                                  widget.shopDetails['phone_number'] +
-                                  ")"),
-                          trailing: IconButton(
-                            icon: Icon(Icons.call),
-                            onPressed: () {
-                              print("Open");
-                              // MapUtils.openMap(widget.shopDetails['shop_lat'], widget.shopDetails['shop_lon']);
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                    Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ListTile(
-                          title: Text("User Limit (Every 10 minutes)"),
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.cyan,
-                            child: Text("L"),
-                          ),
-                          subtitle:
-                              Text(widget.shopDetails['limit'].toString()),
-                          trailing: IconButton(
-                            icon: Icon(Icons.info),
-                            onPressed: () {
-                              print("Open");
-                              // MapUtils.openMap(widget.shopDetails['shop_lat'], widget.shopDetails['shop_lon']);
-                            },
-                          ),
-                        ),
-                      ),
-                    )
-                  ],
-                ))),
-          )
-        ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

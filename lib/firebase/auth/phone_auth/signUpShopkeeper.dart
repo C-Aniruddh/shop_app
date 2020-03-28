@@ -5,12 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_firebase/data_models/countries.dart';
-import 'package:flutter_firebase/firebase/auth/phone_auth/code.dart';
 import 'package:flutter_firebase/utils/constants.dart';
 import '../../../data_models/ShopkeeperModel.dart';
-import '../../../data_models/ShopkeeperModel.dart';
 import '../../../screens/homePage.dart';
-import 'code.dart' show FirebasePhoneAuth, phoneAuthState;
 import '../../../utils/widgets.dart';
 import 'package:google_map_location_picker/google_map_location_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -20,8 +17,8 @@ import 'package:flutter_firebase/data_models/ShopkeeperModel.dart';
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class SignUpShopkeeper extends StatefulWidget {
-  Color cardBackgroundColor = Color(0xFF6874C2);
-  String logo = Assets.firebase;
+  final Color cardBackgroundColor = Color(0xFF6874C2);
+  final String logo = Assets.firebase;
 
   @override
   SignUpShopkeeperState createState() => SignUpShopkeeperState();
@@ -44,7 +41,6 @@ class SignUpShopkeeperState extends State<SignUpShopkeeper> {
 
   int _selectedCountryIndex = 0;
   bool _isCountriesDataFormed = false;
-  String _placeName = 'Unknown';
   String apiKey = "AIzaSyC8mQe0t6T0yJz1DJNW9w0nKgUzKx-aCHM";
 
   String shopAddress = "";
@@ -124,7 +120,7 @@ class SignUpShopkeeperState extends State<SignUpShopkeeper> {
             'shop_lat': shopkeeperModel.coordinates.latitude,
             'shop_lon': shopkeeperModel.coordinates.longitude,
             'shop_geohash': shopkeeperModel.geohash,
-            'shop_GST': shopkeeperModel.GST,
+            'shop_GST': shopkeeperModel.gst,
             'uid': user.uid,
             'token': 'none'
           });
@@ -234,7 +230,7 @@ class SignUpShopkeeperState extends State<SignUpShopkeeper> {
           'shop_lat': shopkeeperModel.coordinates.latitude,
           'shop_lon': shopkeeperModel.coordinates.longitude,
           'shop_geohash': shopkeeperModel.geohash,
-          'shop_GST': shopkeeperModel.GST,
+          'shop_GST': shopkeeperModel.gst,
           'uid': user.uid,
           'token': 'none'
         });
