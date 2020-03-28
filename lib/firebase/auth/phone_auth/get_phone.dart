@@ -136,7 +136,7 @@ class PhoneAuthGetPhoneState extends State<PhoneAuthGetPhone> {
     //pr.show();
     final AuthCredential credential = PhoneAuthProvider.getCredential(
       verificationId: _verificationId,
-      smsCode: _smsController.text,
+      smsCode: code,
     );
     final FirebaseUser user =
         (await _auth.signInWithCredential(credential)).user;

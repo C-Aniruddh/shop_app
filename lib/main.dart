@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_firebase/test_screen.dart';
 import 'firebase/auth/phone_auth/get_phone.dart';
 import 'package:flutter_firebase/screens/loginPage.dart';
 import 'package:flutter/material.dart';

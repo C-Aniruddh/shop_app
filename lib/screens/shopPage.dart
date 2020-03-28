@@ -115,10 +115,10 @@ class _ShopPageState extends State<ShopPage> {
               }),
           FlatButton(
               child: Text('Request Appointment'),
-              onPressed: () {
+              onPressed: () async{
                 var rng = new Random();
                 var now = new DateTime.now();
-                Firestore.instance.collection('appointments')
+                await Firestore.instance.collection('appointments')
                     .add({'timestamp': now,
                   'items': _textEditingController.text,
                   'target_shop': widget.shopDetails['uid'],
@@ -130,6 +130,15 @@ class _ShopPageState extends State<ShopPage> {
                   'appointment_start': null,
                   'appointment_end': null,
                   'otp': (rng.nextInt(10000) + 1000).toString()
+                }).then((value) async{
+                  String title = "New appointment request";
+                  String body = widget.userDetails['name'] + " has requested an appointment.";
+                  await Firestore.instance.collection('notifications')
+                      .add({'sender_type': "users",
+                    'receiver_uid': widget.shopDetails['uid'],
+                    'title': title,
+                    'body': body,
+                  });
                 });
                 Navigator.pop(context);
                 _showInformationDialog(context, "Your appointment was successfully requested");

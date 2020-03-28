@@ -527,12 +527,24 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             actions: <Widget>[
               FlatButton(
-                onPressed: () {
+                onPressed: () async {
                   if (otpController.text == otp) {
-                    Firestore.instance
+                    await Firestore.instance
                         .collection('appointments')
                         .document(documentID)
-                        .updateData({'appointment_status': 'completed'});
+                        .updateData({'appointment_status': 'completed'}).then((value) async{
+                          await Firestore.instance.collection('appointments')
+                          .document(documentID).get().then((doc) async{
+                            var title = "Apopintment completed";
+                            var body = "Your appointment at " + doc['shop_name'] + " was marked completed";
+                            await Firestore.instance.collection('notifications')
+                                .add({'sender_type': "shops",
+                              'receiver_uid': doc['shopper_uid'],
+                              'title': title,
+                              'body': body,
+                            });
+                          });
+                    });
                     Navigator.pop(context);
                   } else {
                     Navigator.pop(context);
@@ -764,8 +776,19 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                               endTime,
                                                                           'appointment_status':
                                                                               'scheduled'
+                                                                        }).then((value) async {
+                                                                          await Firestore.instance.collection('appointments')
+                                                                              .document(document.documentID).get().then((doc) async{
+                                                                            var title = "Apopintment scheduled";
+                                                                            var body = "Your appointment at " + doc['shop_name'] + " is scheduled";
+                                                                            await Firestore.instance.collection('notifications')
+                                                                                .add({'sender_type': "shops",
+                                                                              'receiver_uid': doc['shopper_uid'],
+                                                                              'title': title,
+                                                                              'body': body,
+                                                                            });
+                                                                          });
                                                                         });
-
                                                                         Navigator.pop(
                                                                             context);
                                                                       },
