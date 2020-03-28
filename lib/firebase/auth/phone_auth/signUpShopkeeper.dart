@@ -131,7 +131,7 @@ class SignUpShopkeeperState extends State<SignUpShopkeeper> {
 
           DocumentReference _docRef2 =  Firestore.instance.collection('uid_type').document(user.uid);
           _docRef2.setData({
-            'type': 'user',
+            'type': 'shop',
           });
 
           Navigator.pushAndRemoveUntil(context,
