@@ -36,7 +36,7 @@ dependencies:
   google_maps_flutter:
   url_launcher: any
   flutter_datetime_picker: ^1.3.5
-
+  jiffy: ^3.0.1
 
 dev_dependencies:
   flutter_test:
