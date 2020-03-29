@@ -10,6 +10,7 @@ import 'package:flutter_firebase/utils/widgets.dart';
 import 'package:latlong/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
+import 'package:jiffy/jiffy.dart';
 
 import '../data_models/ShopkeeperModel.dart';
 import '../data_models/userModel.dart';
@@ -46,6 +47,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String userUID;
 
   bool userLoaded = false;
+  bool timeSlotsLoaded = false;
 
   DocumentSnapshot userData;
 
@@ -57,6 +59,8 @@ class _MyHomePageState extends State<MyHomePage> {
   TextEditingController endTimeController = new TextEditingController();
   TextEditingController otpController = new TextEditingController();
   TextEditingController _dataController = TextEditingController();
+
+  List<String> timeSlots;
 
   @override
   void dispose() {
@@ -89,6 +93,9 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       userLoaded = true;
     });
+    if (userType == "shops"){
+      updateTimeSlots();
+    }
   }
 
   List<String> calculateFilter() {
@@ -143,6 +150,76 @@ class _MyHomePageState extends State<MyHomePage> {
           setUserData(type, uid);
         });
       }
+    });
+  }
+
+  String getCity(String address){
+    List<String> elements = address.split(',');
+    String city = elements[elements.length - 3];
+    return city.trim();
+  }
+
+  getIntervals(String st, String et){
+    List<String> start = st.split(':');
+    List<String> end = et.split(':');
+
+    int start_hour = int.parse(start[0]);
+    int start_minute = int.parse(start[1]);
+    int end_hour = int.parse(end[0]);
+    int end_minute = int.parse(end[1]);
+
+    Jiffy start_time = Jiffy({
+      "hour" : start_hour,
+      "minute": start_minute
+    });
+
+    Jiffy end_time = Jiffy({
+      "hour" : end_hour,
+      "minute": end_minute
+    });
+
+    int current_hour = 0;
+    int current_minute = 0;
+
+    List<String> slots = [];
+    Jiffy previous_time = start_time;
+
+    while(previous_time.isBefore(end_time)){
+      Jiffy temp_time = new Jiffy(previous_time);
+      Jiffy new_time = Jiffy(temp_time.add(duration: Duration(minutes: 15)));
+      current_hour = new_time.hour;
+      current_minute = new_time.minute;
+      slots.add(previous_time.format("HH:mm") + "--" + new_time.format("HH:mm"));
+      previous_time = new_time;
+    }
+    // print(slots);
+    return slots;
+  }
+
+
+  updateTimeSlots() async {
+    print(getCity(userData['shop_address']));
+    Firestore.instance.collection('cities')
+        .where('city', isEqualTo: getCity(userData['shop_address']))
+        .getDocuments()
+        .then((docs) async {
+          if(docs.documents.isEmpty){
+            print("empty");
+            String start_time = "04:00";
+            String end_time = "21:00";
+            timeSlots = getIntervals(start_time, end_time);
+            setState(() {
+              timeSlots = getIntervals(start_time, end_time);
+            });
+          } else {
+            String start_time = docs.documents[0]['start_time'];
+            String end_time = docs.documents[0]['end_time'];
+            timeSlots = getIntervals(start_time, end_time);
+            setState(() {
+              timeSlots = getIntervals(start_time, end_time);
+              timeSlotsLoaded = true;
+            });
+          }
     });
   }
 
@@ -719,9 +796,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                 padding: const EdgeInsets.all(8.0),
                                 child: new ListTile(
                                   contentPadding: EdgeInsets.all(8),
-                                  onTap: () {
-                                    var startTime;
-                                    var endTime;
+                                  onTap: () async {
+                                    String startTime;
+                                    String endTime;
+                                    String value_drop;
                                     showModalBottomSheet(
                                         context: context,
                                         builder: (context) => StatefulBuilder(
@@ -817,56 +895,30 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                                       ),
                                                                                     ),
                                                                                   )),
-                                                                              InkWell(
-                                                                                  onTap:
-                                                                                      () {
-                                                                                    DatePicker.showTime12hPicker(
-                                                                                        context,
-                                                                                        theme: DatePickerTheme(
-                                                                                            backgroundColor: Colors.grey[900],
-                                                                                            itemStyle: TextStyle(color: Colors.white),
-                                                                                            cancelStyle: TextStyle(color: Colors.white)),
-                                                                                        showTitleActions: true, onChanged: (date) {
-                                                                                      print('change $date in time zone ' +
-                                                                                          date.timeZoneOffset.inHours.toString());
-                                                                                    }, onConfirm: (date) {
-                                                                                      startTime =
-                                                                                          date;
-                                                                                      setStateSheet(
-                                                                                              () {
-                                                                                            startTimeController.text =
-                                                                                                startTime.toString();
-                                                                                          });
-                                                                                    }, currentTime: DateTime.now());
-                                                                                  },
-                                                                                  child: PhoneAuthWidgets
-                                                                                      .textFieldDisabled(
-                                                                                      startTimeController)),
-                                                                              InkWell(
-                                                                                  onTap:
-                                                                                      () {
-                                                                                    DatePicker.showTime12hPicker(
-                                                                                        context,
-                                                                                        theme: DatePickerTheme(
-                                                                                            backgroundColor: Colors.grey[900],
-                                                                                            itemStyle: TextStyle(color: Colors.white),
-                                                                                            cancelStyle: TextStyle(color: Colors.white)),
-                                                                                        showTitleActions: true, onChanged: (date) {
-                                                                                      print('change $date in time zone ' +
-                                                                                          date.timeZoneOffset.inHours.toString());
-                                                                                    }, onConfirm: (date) {
-                                                                                      endTime =
-                                                                                          date;
-                                                                                      setStateSheet(
-                                                                                              () {
-                                                                                            endTimeController.text =
-                                                                                                endTime.toString();
-                                                                                          });
-                                                                                    }, currentTime: DateTime.now());
-                                                                                  },
-                                                                                  child: PhoneAuthWidgets
-                                                                                      .textFieldDisabled(
-                                                                                      endTimeController)),
+                                                                              timeSlotsLoaded ?
+                                                                              Card(
+                                                                                elevation: 2,
+                                                                                child: ListTile(
+                                                                                  title: Text("Select time slot"),
+                                                                                  subtitle: DropdownButton<String>(
+                                                                                    items: timeSlots.map((String value) {
+                                                                                      return new DropdownMenuItem<String>(
+                                                                                        value: value,
+                                                                                        child: new Text(value),
+                                                                                      );
+                                                                                    }).toList(),
+                                                                                    onChanged: (_) {
+                                                                                      value_drop = _;
+                                                                                      setStateSheet(() {
+                                                                                        value_drop = _;
+                                                                                        startTimeController.text = value_drop.split('--')[0];
+                                                                                        endTimeController.text = value_drop.split('--')[1];
+                                                                                      });
+                                                                                    },
+                                                                                  ),
+                                                                                ),
+                                                                              )
+                                                                              : Container(),
                                                                               Center(
                                                                                 child:
                                                                                 RaisedButton(
@@ -876,6 +928,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                                       "Confirm"),
                                                                                   onPressed:
                                                                                       () {
+                                                                                    startTime = value_drop.split('--')[0];
+                                                                                    endTime = value_drop.split('--')[1];
                                                                                     Firestore
                                                                                         .instance
                                                                                         .collection('appointments')
