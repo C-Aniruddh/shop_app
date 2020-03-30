@@ -100,7 +100,7 @@ class PhoneAuthGetPhoneState extends State<PhoneAuthGetPhone> {
                     onPressed: () {
                       Navigator.pop(context);
                     },
-                    child: Text('Ok', style: TextStyle(color: Color(0xFFF37256)),)
+                    child: Text('Ok', style: TextStyle(color: Theme.of(context).accentColor),)
                 ),
               ],
             );
