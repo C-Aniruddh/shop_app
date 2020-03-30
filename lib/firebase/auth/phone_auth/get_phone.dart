@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_signin_button/button_builder.dart';
 
 import '../../../data_models/countries.dart';
 import '../../../utils/constants.dart';
@@ -11,8 +12,7 @@ import '../../../utils/widgets.dart';
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class PhoneAuthGetPhone  extends StatefulWidget {
-  final Color cardBackgroundColor = Color(0xFF6874C2);
-  final String logo = Assets.firebase;
+  final String logo = Assets.localdukaan;
 
   @override
   State<StatefulWidget> createState() => PhoneAuthGetPhoneState();
@@ -270,7 +270,7 @@ class PhoneAuthGetPhoneState extends State<PhoneAuthGetPhone> {
                       logoPath: widget.logo, height: _height * 0.2),
                 ),
 
-                Text("Shop App",
+                Text("Local Dukaan",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         color: Colors.white,
@@ -323,21 +323,14 @@ class PhoneAuthGetPhoneState extends State<PhoneAuthGetPhone> {
                       ),
 
                       SizedBox(height: _fixedPadding * 1.5),
-                      RaisedButton(
-                        elevation: 16.0,
+
+                      SignInButtonBuilder(
+                        text: 'Send OTP',
+                        icon: Icons.sms,
                         onPressed: sendOTP,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            'SEND OTP',
-                            style: TextStyle(
-                                color: widget.cardBackgroundColor, fontSize: 18.0),
-                          ),
-                        ),
-                        color: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30.0)),
+                        backgroundColor: Theme.of(context).accentColor,
                       ),
+
                     ],
 
                   ),
@@ -400,20 +393,11 @@ class PhoneAuthGetPhoneState extends State<PhoneAuthGetPhone> {
 
                       SizedBox(height: 32.0),
 
-                      RaisedButton(
-                        elevation: 16.0,
+                      SignInButtonBuilder(
+                        text: 'Verify',
+                        icon: Icons.sms,
                         onPressed: verifyOTP,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            'VERIFY',
-                            style: TextStyle(
-                                color: Colors.blueGrey, fontSize: 18.0),
-                          ),
-                        ),
-                        color: Colors.white,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30.0)),
+                        backgroundColor: Theme.of(context).accentColor,
                       ),
                     ],
 

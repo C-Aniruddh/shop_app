@@ -4,21 +4,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_firebase/data_models/countries.dart';
-import 'package:flutter_firebase/utils/constants.dart';
+import 'package:local_dukaan/data_models/countries.dart';
+import 'package:local_dukaan/utils/constants.dart';
 import '../../../data_models/ShopkeeperModel.dart';
 import '../../../screens/homePage.dart';
 import '../../../utils/widgets.dart';
 import 'package:google_map_location_picker/google_map_location_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:dart_geohash/dart_geohash.dart';
-import 'package:flutter_firebase/data_models/ShopkeeperModel.dart';
+import 'package:local_dukaan/data_models/ShopkeeperModel.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 
 class SignUpShopkeeper extends StatefulWidget {
   final Color cardBackgroundColor = Color(0xFF6874C2);
-  final String logo = Assets.firebase;
+  final String logo = Assets.localdukaan;
 
   @override
   SignUpShopkeeperState createState() => SignUpShopkeeperState();

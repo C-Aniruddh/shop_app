@@ -1,4 +1,4 @@
-package com.aniruddh.shop_app;
+package com.local_dukaan.app;
 
 import android.os.Bundle;
 import io.flutter.app.FlutterActivity;
