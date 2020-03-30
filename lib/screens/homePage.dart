@@ -1,15 +1,14 @@
 import 'package:dart_geohash/dart_geohash.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_firebase/screens/loginPage.dart';
+import 'package:local_dukaan/screens/loginPage.dart';
 import 'package:cuberto_bottom_bar/cuberto_bottom_bar.dart';
-import 'package:flutter_firebase/handler.dart';
+import 'package:local_dukaan/handler.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_firebase/screens/shopPage.dart';
-import 'package:flutter_firebase/utils/widgets.dart';
+import 'package:local_dukaan/screens/shopPage.dart';
+import 'package:local_dukaan/utils/widgets.dart';
 import 'package:latlong/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:jiffy/jiffy.dart';
 
 import '../data_models/ShopkeeperModel.dart';
@@ -163,34 +162,34 @@ class _MyHomePageState extends State<MyHomePage> {
     List<String> start = st.split(':');
     List<String> end = et.split(':');
 
-    int start_hour = int.parse(start[0]);
-    int start_minute = int.parse(start[1]);
-    int end_hour = int.parse(end[0]);
-    int end_minute = int.parse(end[1]);
+    int startHour = int.parse(start[0]);
+    int startMinute = int.parse(start[1]);
+    int endHour = int.parse(end[0]);
+    int endMinute = int.parse(end[1]);
 
-    Jiffy start_time = Jiffy({
-      "hour" : start_hour,
-      "minute": start_minute
+    Jiffy startTime = Jiffy({
+      "hour" : startHour,
+      "minute": startMinute
     });
 
-    Jiffy end_time = Jiffy({
-      "hour" : end_hour,
-      "minute": end_minute
+    Jiffy endTime = Jiffy({
+      "hour" : endHour,
+      "minute": endMinute
     });
 
-    int current_hour = 0;
-    int current_minute = 0;
+    int currentHour = 0;
+    int currentMinute = 0;
 
     List<String> slots = [];
-    Jiffy previous_time = start_time;
+    Jiffy previousTime = startTime;
 
-    while(previous_time.isBefore(end_time)){
-      Jiffy temp_time = new Jiffy(previous_time);
-      Jiffy new_time = Jiffy(temp_time.add(duration: Duration(minutes: 15)));
-      current_hour = new_time.hour;
-      current_minute = new_time.minute;
-      slots.add(previous_time.format("HH:mm") + "--" + new_time.format("HH:mm"));
-      previous_time = new_time;
+    while(previousTime.isBefore(endTime)){
+      Jiffy tempTime = new Jiffy(previousTime);
+      Jiffy newTime = Jiffy(tempTime.add(duration: Duration(minutes: 15)));
+      currentHour = newTime.hour;
+      currentMinute = newTime.minute;
+      slots.add(previousTime.format("HH:mm") + "--" + newTime.format("HH:mm"));
+      previousTime = newTime;
     }
     // print(slots);
     return slots;
@@ -205,18 +204,18 @@ class _MyHomePageState extends State<MyHomePage> {
         .then((docs) async {
           if(docs.documents.isEmpty){
             print("empty");
-            String start_time = "04:00";
-            String end_time = "21:00";
-            timeSlots = getIntervals(start_time, end_time);
+            String startTime = "04:00";
+            String endTime = "21:00";
+            timeSlots = getIntervals(startTime, endTime);
             setState(() {
-              timeSlots = getIntervals(start_time, end_time);
+              timeSlots = getIntervals(startTime, endTime);
             });
           } else {
-            String start_time = docs.documents[0]['start_time'];
-            String end_time = docs.documents[0]['end_time'];
-            timeSlots = getIntervals(start_time, end_time);
+            String startTime = docs.documents[0]['start_time'];
+            String endTime = docs.documents[0]['end_time'];
+            timeSlots = getIntervals(startTime, endTime);
             setState(() {
-              timeSlots = getIntervals(start_time, end_time);
+              timeSlots = getIntervals(startTime, endTime);
               timeSlotsLoaded = true;
             });
           }
@@ -799,7 +798,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                   onTap: () async {
                                     String startTime;
                                     String endTime;
-                                    String value_drop;
+                                    String valueDrop;
                                     showModalBottomSheet(
                                         context: context,
                                         builder: (context) => StatefulBuilder(
@@ -908,11 +907,11 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                                       );
                                                                                     }).toList(),
                                                                                     onChanged: (_) {
-                                                                                      value_drop = _;
+                                                                                      valueDrop = _;
                                                                                       setStateSheet(() {
-                                                                                        value_drop = _;
-                                                                                        startTimeController.text = value_drop.split('--')[0];
-                                                                                        endTimeController.text = value_drop.split('--')[1];
+                                                                                        valueDrop = _;
+                                                                                        startTimeController.text = valueDrop.split('--')[0];
+                                                                                        endTimeController.text = valueDrop.split('--')[1];
                                                                                       });
                                                                                     },
                                                                                   ),
@@ -928,8 +927,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                                       "Confirm"),
                                                                                   onPressed:
                                                                                       () {
-                                                                                    startTime = value_drop.split('--')[0];
-                                                                                    endTime = value_drop.split('--')[1];
+                                                                                    startTime = valueDrop.split('--')[0];
+                                                                                    endTime = valueDrop.split('--')[1];
                                                                                     Firestore
                                                                                         .instance
                                                                                         .collection('appointments')

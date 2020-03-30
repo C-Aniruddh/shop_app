@@ -10,7 +10,7 @@
         <!--View Controller-->
         <scene sceneID="EHf-IW-A2E">
             <objects>
-                <viewController id="01J-lp-oVM" sceneMemberID="viewController">
+                <viewController modalTransitionStyle="crossDissolve" id="01J-lp-oVM" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="Ydg-fD-yQy"/>
                         <viewControllerLayoutGuide type="bottom" id="xbc-2k-c8Z"/>
@@ -20,7 +20,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <imageView opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" image="LaunchImage" translatesAutoresizingMaskIntoConstraints="NO" id="YRO-k0-Ey4">
-                                <rect key="frame" x="187" y="428" width="40" height="40"/>
+                                <rect key="frame" x="165.5" y="406.5" width="83.5" height="83.5"/>
                                 <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <rect key="contentStretch" x="1" y="1" width="1" height="1"/>
                                 <preferredSymbolConfiguration key="preferredSymbolConfiguration" scale="default"/>
@@ -39,6 +39,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="LaunchImage" width="40" height="40"/>
+        <image name="LaunchImage" width="83.5" height="83.5"/>
     </resources>
 </document>

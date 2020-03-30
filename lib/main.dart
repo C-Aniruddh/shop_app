@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_firebase/screens/loginPage.dart';
+import 'package:local_dukaan/screens/loginPage.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_firebase/screens/homePage.dart';
+import 'package:local_dukaan/screens/homePage.dart';
 
 void main() {
   runApp(MyApp());
