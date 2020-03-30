@@ -18,7 +18,7 @@
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		D256736F242F459500BF79B5 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = D256736E242F459500BF79B5 /* GoogleService-Info.plist */; };
-		D2DE11B82430E3A5007FECB7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D2DE11B72430E3A5007FECB7 /* Assets.xcassets */; };
+		D2DE11BC24320C38007FECB7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D2DE11BB24320C37007FECB7 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -57,7 +57,7 @@
 		B3C3B6F3CF1D945B8A998B2B /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 		D256736E242F459500BF79B5 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		D2A0D530242F57B7003F3C35 /* ShopApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShopApp.entitlements; sourceTree = "<group>"; };
-		D2DE11B72430E3A5007FECB7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D2DE11BB24320C37007FECB7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -109,7 +109,7 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
-				D2DE11B72430E3A5007FECB7 /* Assets.xcassets */,
+				D2DE11BB24320C37007FECB7 /* Assets.xcassets */,
 				D2A0D530242F57B7003F3C35 /* ShopApp.entitlements */,
 				D256736E242F459500BF79B5 /* GoogleService-Info.plist */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
@@ -218,7 +218,7 @@
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				D256736F242F459500BF79B5 /* GoogleService-Info.plist in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
-				D2DE11B82430E3A5007FECB7 /* Assets.xcassets in Resources */,
+				D2DE11BC24320C38007FECB7 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
